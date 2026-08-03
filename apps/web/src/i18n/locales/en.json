@@ -46,5 +46,12 @@
   "admin_title": "Admin gate",
   "admin_note": "CREW / INTERNAL",
   "empty_state": "NOTHING HERE. YET.",
-  "members_only": "MEMBERS ONLY"
+  "members_only": "MEMBERS ONLY",
+  "notfound_title": "WRONG ALLEY",
+  "notfound_hint": "DEAD END. TURN BACK.",
+  "notfound_back": "Back to the wall",
+  "admin_flags": "FEATURE FLAGS",
+  "admin_queue": "APPROVAL QUEUE",
+  "admin_approve": "Approve",
+  "admin_approved": "APPROVED"
 }

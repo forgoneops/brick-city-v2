@@ -46,5 +46,12 @@
   "admin_title": "Brama admina",
   "admin_note": "EKIPA / WEWNĘTRZNE",
   "empty_state": "TU PUSTO. NA RAZIE.",
-  "members_only": "TYLKO DLA CZŁONKÓW"
+  "members_only": "TYLKO DLA CZŁONKÓW",
+  "notfound_title": "WRONG ALLEY",
+  "notfound_hint": "ŚLEPA ULICZKA. WRACAJ.",
+  "notfound_back": "Wróć na mur",
+  "admin_flags": "FLAGI FUNKCJI",
+  "admin_queue": "KOLEJKA AKCEPTACJI",
+  "admin_approve": "Akceptuj",
+  "admin_approved": "ZATWIERDZONO"
 }

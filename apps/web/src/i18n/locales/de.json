@@ -46,5 +46,12 @@
   "admin_title": "Admin-Tor",
   "admin_note": "CREW / INTERNE",
   "empty_state": "HIER IST NICHTS. NOCH NICHT.",
-  "members_only": "NUR FUR MITGLIEDER"
+  "members_only": "NUR FUR MITGLIEDER",
+  "notfound_title": "WRONG ALLEY",
+  "notfound_hint": "SACKGASSE. DREH UM.",
+  "notfound_back": "Zuruck zur Mauer",
+  "admin_flags": "FEATURE-FLAGS",
+  "admin_queue": "FREIGABE-WARTESCHLANGE",
+  "admin_approve": "Freigeben",
+  "admin_approved": "FREIGEGEBEN"
 }

@@ -12,6 +12,8 @@ import { Profile } from './pages/Profile.js';
 import { Login } from './pages/Login.js';
 import { Invite } from './pages/Invite.js';
 import { Admin } from './pages/Admin.js';
+import { NotFound } from './pages/NotFound.js';
+import { FEATURES } from './config/features.js';
 
 export default function App() {
   return (
@@ -22,13 +24,16 @@ export default function App() {
         <Route path="/map" element={<Map />} />
         <Route path="/news" element={<News />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/battles" element={<Battles />} />
+        {/* Battles stays in code but is unreachable while the flag is off
+            (flip FEATURES.battles in src/config/features.ts to re-enable) */}
+        {FEATURES.battles && <Route path="/battles" element={<Battles />} />}
         <Route path="/forum" element={<Forum />} />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/invite" element={<Invite />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
   );

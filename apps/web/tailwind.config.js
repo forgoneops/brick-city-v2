@@ -18,6 +18,7 @@ export default {
         display: [
           "'Dusk Till Dawn'",
           "'Big Shoulders Stencil'",
+          "'Saira Stencil One'",
           "'Grenze Gotisch'",
           'Oswald',
           'sans-serif',

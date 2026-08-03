@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- CUTOUTS icon set — SIDE ALLEY design system.
+       24px grid, 1.5px stroke, one intentional stencil gap per icon. -->
+  <symbol id="spray-can" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- gap: right wall of the can body is cut -->
+    <path d="M8 7 v13 h8 v-9" />
+    <path d="M16 7 h-8" />
+    <path d="M16 7 v2" />
+    <path d="M10 7 v-2 h4 v2" />
+    <path d="M11 3 h2" />
+    <path d="M18 4 h3 M19 7 h2 M18 10 h3" />
+  </symbol>
+  <symbol id="wall-brick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- gap: middle course is cut through -->
+    <path d="M2 5 h20" />
+    <path d="M2 10 h8 M14 10 h8" />
+    <path d="M2 15 h20" />
+    <path d="M2 20 h20" />
+    <path d="M8 5 v5 M16 5 v5" />
+    <path d="M12 15 v5 M5 15 v5 M19 15 v5" />
+  </symbol>
+  <symbol id="pin-folded" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- folded map with a dropped pin; gap: pin outline is cut at the left -->
+    <path d="M3 8 l5 -2 l8 2 l5 -2 v12 l-5 2 l-8 -2 l-5 2 z" />
+    <path d="M8 6 v12 M16 8 v12" />
+    <path d="M12 10 a2.2 2.2 0 0 1 2.2 2.2 c0 1.6 -2.2 3.8 -2.2 3.8 s-2.2 -2.2 -2.2 -3.8" />
+  </symbol>
+  <symbol id="zine-page" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- gap: left edge of the page is cut -->
+    <path d="M7 3 h10 v18 h-10" />
+    <path d="M7 3 v6" />
+    <path d="M7 13 v8" />
+    <path d="M9.5 7 h5 M9.5 11 h5 M9.5 15 h3" />
+    <path d="M14 3 l3 3 h-3 z" />
+  </symbol>
+  <symbol id="crown-stencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- gap: band is cut from the points (the stencil bridge) -->
+    <path d="M5 13 l1.5 -6 l3.5 4 l2 -5 l2 5 l3.5 -4 l1.5 6" />
+    <path d="M5 16 h14 M5 19 h14" />
+  </symbol>
+  <symbol id="mask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- anonymous mask; gap: top edge is cut -->
+    <path d="M4 9 c0 -3 3 -4 5 -4 M15 5 c2 0 5 1 5 4 v4 c0 4 -16 4 -16 0 z" />
+    <path d="M8 11 h2.5 M13.5 11 h2.5" />
+  </symbol>
+  <symbol id="lantern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- events lantern; gap: right wall is cut -->
+    <path d="M10 3 h4" />
+    <path d="M12 3 v2" />
+    <path d="M8 7 h8 l1 3 v9 h-9 v-9 z" />
+    <path d="M17 12 v4" />
+    <path d="M12 10 v6 M10 19 h4" />
+  </symbol>
+  <symbol id="scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- ranking scale; gap: center post is cut -->
+    <path d="M12 3 v7 M12 14 v5" />
+    <path d="M8 21 h8" />
+    <path d="M4 6 h16" />
+    <path d="M4 6 l-2.5 6 h5 z M20 6 l-2.5 6 h5 z" />
+  </symbol>
+  <symbol id="thread" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- forum thread; gap: middle line is broken -->
+    <path d="M4 6 h16" />
+    <path d="M4 12 h6 M14 12 h6" />
+    <path d="M4 18 h9" />
+  </symbol>
+  <symbol id="vault" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- wallet vault; gap: outer ring is cut -->
+    <path d="M12 3 a9 9 0 0 1 9 9 M12 21 a9 9 0 0 1 -9 -9 a9 9 0 0 1 9 -9" />
+    <path d="M12 21 a9 9 0 0 0 8 -4" />
+    <circle cx="12" cy="12" r="3.5" />
+    <path d="M12 8.5 v-2 M12 17.5 v-2 M8.5 12 h-2 M17.5 12 h-2" />
+  </symbol>
+  <symbol id="key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- invite key; gap: shaft is cut -->
+    <circle cx="7" cy="12" r="4" />
+    <path d="M11 12 h4 M18 12 h3" />
+    <path d="M18 12 v3 M21 12 v2" />
+  </symbol>
+  <symbol id="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- hidden / members-only; gap: lower lid is cut -->
+    <path d="M3 12 c3 -5 15 -5 18 0 c-1 1.6 -2.5 2.9 -4.5 3.7 M12 16.5 c-3.6 0 -7.1 -1.7 -9 -4.5" />
+    <path d="M4 20 l16 -16" />
+  </symbol>
+  <symbol id="gate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- admin gate; gap: top frame is cut -->
+    <path d="M4 4 h7 M15 4 h5 v16 h-16 v-16" />
+    <path d="M12 8 v12" />
+    <path d="M8 13 h1.5 M14.5 13 h1.5" />
+  </symbol>
+  <symbol id="drip-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+    <!-- notifications; gap: between the dot and its drip (the stencil bridge) -->
+    <circle cx="12" cy="7" r="3.5" />
+    <path d="M12 13 v4" />
+    <path d="M12 19.5 v1.5" />
+  </symbol>
+</svg>

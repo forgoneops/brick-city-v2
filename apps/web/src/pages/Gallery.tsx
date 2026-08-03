@@ -1,12 +1,16 @@
+import { ModulePage } from '../components/ModulePage.js';
+import { EmptyState } from '../components/EmptyState.js';
 import { useT } from '../i18n/index.js';
 
+// Gallery — wanted-poster cards (WantedCard) once pieces exist;
+// mono empty state until then.
 export function Gallery() {
   const { t } = useT();
+  const pieces: unknown[] = []; // TODO(phase-2): wire to trpc.gallery.list
+
   return (
-    <section className="border border-fog bg-concrete p-6">
-      <h1 className="font-display text-3xl">{t('nav_gallery')}</h1>
-      <p className="label-mono mt-2">MODULE / {t('nav_gallery').toUpperCase()} / PHASE 0</p>
-      <p className="mt-6 text-smoke">{t('empty_state')}</p>
-    </section>
+    <ModulePage title={t('nav_gallery')} icon="spray-can" tag={`GALLERY / WAW-044 / ${pieces.length} FILED`}>
+      {pieces.length === 0 ? <EmptyState /> : null}
+    </ModulePage>
   );
 }

@@ -1,68 +1,43 @@
 import { useState } from 'react';
 import { useT } from '../i18n/index.js';
 
+// Invite page (spec §6): black screen, single input, signal caret,
+// mono whisper — YOU HEARD ABOUT US SOMEWHERE.
 export function Invite() {
   const { t } = useT();
   const [code, setCode] = useState('');
-  const [email, setEmail] = useState('');
-  const [nick, setNick] = useState('');
-  const [password, setPassword] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO(phase-1): wire to trpc.auth.register.mutate
-    console.log('invite register attempt', { code, email, nick, password });
+    // TODO(phase-2): wire to trpc.auth.register.mutate (invite code + account details)
+    console.log('invite code attempt', { code });
   }
 
   return (
-    <section className="mx-auto max-w-md border border-fog bg-concrete p-6">
-      <h1 className="font-display text-3xl">{t('invite_title')}</h1>
-      <p className="label-mono mt-2">{t('invite_whisper')}</p>
+    <section className="flex min-h-screen flex-col items-center justify-center bg-ink px-4">
+      <p className="label-mono mb-10 text-center">{t('invite_whisper')}</p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <label className="block">
-          <span className="label-mono">{t('invite_code')}</span>
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="mt-1 w-full border border-fog bg-asphalt px-3 py-2 text-bone outline-none focus:border-signal"
-          />
+      <form onSubmit={handleSubmit} className="w-full max-w-xs">
+        <label htmlFor="invite-code" className="sr-only">
+          {t('invite_code')}
         </label>
-        <label className="block">
-          <span className="label-mono">{t('invite_email')}</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full border border-fog bg-asphalt px-3 py-2 text-bone outline-none focus:border-signal"
-          />
-        </label>
-        <label className="block">
-          <span className="label-mono">{t('invite_nick')}</span>
-          <input
-            type="text"
-            value={nick}
-            onChange={(e) => setNick(e.target.value)}
-            className="mt-1 w-full border border-fog bg-asphalt px-3 py-2 text-bone outline-none focus:border-signal"
-          />
-        </label>
-        <label className="block">
-          <span className="label-mono">{t('invite_password')}</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full border border-fog bg-asphalt px-3 py-2 text-bone outline-none focus:border-signal"
-          />
-        </label>
-        <button
-          type="submit"
-          className="w-full border border-signal bg-signal px-4 py-2 font-mono text-[12px] uppercase tracking-widest text-ink hover:bg-ink hover:text-signal"
-        >
-          {t('action_register')}
+        <input
+          id="invite-code"
+          type="text"
+          autoFocus
+          autoComplete="off"
+          spellCheck={false}
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="————"
+          className="input caret-signal border-0 border-b border-fog bg-transparent px-0 py-3 text-center font-mono text-lg uppercase tracking-[0.3em] focus:border-signal"
+        />
+        <button type="submit" className="sr-only">
+          {t('action_submit')}
         </button>
       </form>
+
+      <p className="label-mono mt-10 text-fog">{t('invite_title')}</p>
     </section>
   );
 }
