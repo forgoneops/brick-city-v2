@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0c0c0d;
+  --asphalt: #131315;
+  --concrete: #1b1b1e;
+  --fog: #26262a;
+  --bone: #e6e2d8;
+  --smoke: #7a766c;
+  --signal: #d4ff3f;
+  --blood: #8f2d23;
+  --rust: #b0552f;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink text-bone;
+    font-family: 'Oswald', system-ui, sans-serif;
+  }
+
+  ::selection {
+    background-color: var(--signal);
+    color: var(--ink);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Dusk Till Dawn', 'Big Shoulders Stencil', 'Grenze Gotisch', 'Oswald', sans-serif;
+  }
+
+  .label-mono {
+    @apply font-mono text-[11px] uppercase tracking-[0.18em] text-smoke;
+  }
+}

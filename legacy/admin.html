@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRICK CITY MASHIN' — Admin</title>
+<style>
+:root{
+  --bg:#161616; --bg2:#1f1f1f; --bg3:#262626; --line:#333;
+  --txt:#e8e4dc; --dim:#8a8a8a;
+  --brick:#a34a2a; --yellow:#f5d90a; --magenta:#e01e84; --cyan:#00c2d1;
+  --ok:#4caf6d; --warn:#f5a90a; --bad:#e04545;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px)}
+h1,h2,.brand{font-family:'Arial Black',Impact,sans-serif;letter-spacing:.03em;text-transform:uppercase}
+button{cursor:pointer;font-family:inherit}
+.app{display:flex;min-height:100vh}
+aside{width:230px;background:var(--bg2);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;flex-shrink:0}
+.brand{font-size:1.05rem;line-height:1.2;color:var(--yellow);text-shadow:2px 2px 0 var(--brick);margin-bottom:4px}
+.brand small{display:block;color:var(--dim);font-size:.6rem;letter-spacing:.25em;text-shadow:none;font-family:'Space Grotesk'}
+nav{margin-top:22px;display:flex;flex-direction:column;gap:4px}
+nav button{background:none;border:none;color:var(--dim);text-align:left;padding:10px 12px;border-radius:6px;font-size:.9rem;display:flex;gap:10px;align-items:center;border-left:3px solid transparent}
+nav button:hover{background:var(--bg3);color:var(--txt)}
+nav button.active{background:var(--bg3);color:var(--yellow);border-left-color:var(--magenta)}
+main{flex:1;padding:26px 30px;max-width:1200px}
+.view{display:none}.view.on{display:block;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h1{font-size:1.3rem;margin-bottom:4px}
+.sub{color:var(--dim);font-size:.85rem;margin-bottom:22px}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.stat .num{font-size:2.1rem;font-weight:800;font-family:'Arial Black'}
+.stat .lbl{color:var(--dim);font-size:.78rem;text-transform:uppercase;letter-spacing:.1em}
+.stat .delta{font-size:.75rem;margin-top:4px}
+.up{color:var(--ok)}.down{color:var(--bad)}
+.card h2{font-size:.85rem;color:var(--yellow);margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}
+td{padding:9px 10px;border-bottom:1px solid #2a2a2a}
+tr:hover td{background:#242424}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.p-ok{background:rgba(76,175,109,.15);color:var(--ok)}
+.p-warn{background:rgba(245,169,10,.15);color:var(--warn)}
+.p-bad{background:rgba(224,69,69,.15);color:var(--bad)}
+.p-cyan{background:rgba(0,194,209,.15);color:var(--cyan)}
+.p-mag{background:rgba(224,30,132,.15);color:var(--magenta)}
+.btn{border:1px solid var(--line);background:var(--bg3);color:var(--txt);padding:6px 12px;border-radius:6px;font-size:.78rem}
+.btn:hover{border-color:var(--yellow)}
+.btn.bad{color:var(--bad);border-color:#4a2b2b}.btn.bad:hover{border-color:var(--bad);background:rgba(224,69,69,.1)}
+.btn.ok{color:var(--ok)}.btn.ok:hover{border-color:var(--ok);background:rgba(76,175,109,.1)}
+.btn.warn{color:var(--warn)}
+.btn.primary{background:var(--yellow);color:#111;border-color:var(--yellow);font-weight:700}
+.btn.primary:hover{background:var(--magenta);border-color:var(--magenta);color:#fff}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.feed{max-height:340px;overflow:auto}
+.feed::-webkit-scrollbar{width:8px}.feed::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+.fitem{display:flex;gap:10px;padding:10px;border-bottom:1px solid #2a2a2a;font-size:.83rem;align-items:flex-start}
+.fitem .ico{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.fitem time{color:var(--dim);font-size:.72rem;margin-left:auto;white-space:nowrap}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:9px 11px;font-size:.88rem;font-family:inherit}
+input:focus,textarea:focus{outline:none;border-color:var(--yellow)}
+label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:14px 0 6px}
+#toast{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.tst{background:var(--bg3);border:1px solid var(--yellow);border-left:4px solid var(--yellow);padding:12px 16px;border-radius:8px;font-size:.85rem;animation:slide .3s;max-width:320px}
+@keyframes slide{from{transform:translateX(30px);opacity:0}}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #2a2a2a;font-size:.86rem}
+.tgl{width:42px;height:22px;background:#333;border-radius:20px;position:relative;cursor:pointer;transition:.2s;border:none;flex-shrink:0}
+.tgl::after{content:"";position:absolute;width:16px;height:16px;background:#888;border-radius:50%;top:3px;left:3px;transition:.2s}
+.tgl.on{background:var(--brick)}.tgl.on::after{left:23px;background:var(--yellow)}
+@media(max-width:820px){aside{width:64px}nav button span,.brand small{display:none}.brand{font-size:.7rem}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">Brick City<br>Mashin'<small>ADMIN PANEL</small></div>
+    <nav id="nav">
+      <button data-v="dash" class="active">📊 <span>Dashboard</span></button>
+      <button data-v="cms">📰 <span>CMS / News</span></button>
+      <button data-v="mod">🛡️ <span>Moderation <b id="qcount" style="color:var(--bad)"></b></span></button>
+      <button data-v="bots">🤖 <span>Bot Control</span></button>
+      <button data-v="users">👤 <span>Users</span></button>
+      <button data-v="pins">📍 <span>Map Pins</span></button>
+      <button data-v="set">⚙️ <span>Settings</span></button>
+    </nav>
+  </aside>
+  <main>
+    <section class="view on" id="v-dash">
+      <h1>Dashboard</h1><p class="sub">What's up on the wall — last 24h snapshot</p>
+      <div class="grid g4">
+        <div class="card stat"><div class="num" data-n="12847">0</div><div class="lbl">Total users</div><div class="delta up">▲ 3.2% this week</div></div>
+        <div class="card stat"><div class="num" data-n="342">0</div><div class="lbl">Uploads today</div><div class="delta up">▲ 12% vs yesterday</div></div>
+        <div class="card stat"><div class="num" id="qn">0</div><div class="lbl">Reports in queue</div><div class="delta down">needs attention</div></div>
+        <div class="card stat"><div class="num" data-n="1893">0</div><div class="lbl">Map pins</div><div class="delta up">▲ 47 new this week</div></div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h2>Live activity</h2><div class="feed" id="livefeed"></div></div>
+        <div class="card"><h2>Active battle</h2>
+          <p style="font-size:1.05rem;font-weight:700">“NIGHT FREIGHTS” <span class="pill p-mag">voting open</span></p>
+          <p class="sub" style="margin:6px 0 14px">Deadline: Sunday 23:59 · 86 entries · 1,204 votes cast</p>
+          <div class="actions"><button class="btn primary" onclick="toast('Voting closed manually. Winner crowned! 👑')">Close voting &amp; crown winner</button>
+          <button class="btn" onclick="toast('Battle editor opened (mock)')">Edit battle</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-cms">
+      <h1>CMS / News editor</h1><p class="sub">Publish to the zine — drafts, scheduling, homepage features</p>
+      <div class="grid g2">
+        <div class="card"><h2>New post</h2>
+          <label>Title</label><input id="ptitle" placeholder="e.g. Piece of the Week: KOZE burns the ring line">
+          <label>Category</label><select id="pcat"><option>Piece of the Week</option><option>Interview</option><option>Scene news</option><option>Jam recap</option><option>Announcement</option></select>
+          <label>Body</label><textarea id="pbody" rows="6" placeholder="Write it raw..."></textarea>
+          <div class="actions" style="margin-top:14px">
+            <button class="btn" onclick="saveDraft()">Save draft</button>
+            <button class="btn warn" onclick="toast('Post scheduled for publication ⏰')">Schedule</button>
+            <button class="btn primary" onclick="publish()">Publish now</button>
+          </div>
+        </div>
+        <div class="card"><h2>Recent posts</h2>
+          <table><thead><tr><th>Title</th><th>Status</th><th></th></tr></thead><tbody id="posts"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-mod">
+      <h1>Moderation center</h1><p class="sub">Report queue — one click, wall stays clean</p>
+      <div class="card"><table><thead><tr><th>Content</th><th>Reported by</th><th>Reason</th><th>Flag</th><th>Actions</th></tr></thead><tbody id="queue"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-bots">
+      <h1>Bot &amp; spam control</h1><p class="sub">Shadow-bans, flagged accounts, spam rules</p>
+      <div class="grid g2">
+        <div class="card"><h2>Flagged accounts (live)</h2><div class="feed" id="botfeed"></div></div>
+        <div class="card"><h2>Protection rules</h2>
+          <div id="rules"></div>
+          <label>Upload rate limit (per hour)</label><input type="number" value="10" style="width:100px" onchange="toast('Rate limit updated')">
+          <label>Keyword blacklist</label><input value="casino, crypto, free followers" onchange="toast('Blacklist updated')">
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-users">
+      <h1>Users</h1><p class="sub">Manage writers, roles &amp; badges</p>
+      <div class="card"><table><thead><tr><th>Writer</th><th>Props</th><th>Uploads</th><th>Status</th><th>Actions</th></tr></thead><tbody id="users"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-pins">
+      <h1>Map pin moderation</h1><p class="sub">Approve new spots, merge duplicates</p>
+      <div class="card"><table><thead><tr><th>Spot</th><th>City</th><th>Type</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="pins"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-set">
+      <h1>Settings</h1><p class="sub">Site-wide config &amp; broadcasts</p>
+      <div class="grid g2">
+        <div class="card"><h2>Push broadcast</h2>
+          <label>Message to all installed PWAs</label>
+          <textarea rows="3" id="pushmsg" placeholder="Battle 'Night Freights' ends tonight — cast your votes!"></textarea>
+          <div class="actions" style="margin-top:12px"><button class="btn primary" onclick="toast('📢 Push broadcast sent to 6,214 devices')">Send broadcast</button></div>
+        </div>
+        <div class="card"><h2>Site config</h2><div id="cfg"></div>
+          <div class="actions" style="margin-top:14px"><button class="btn" onclick="toast('Backup exported — brickcity-backup-2026-08-02.zip')">Export backup</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+function toast(m){const t=document.createElement('div');t.className='tst';t.textContent=m;$('#toast').appendChild(t);setTimeout(()=>t.remove(),3200)}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));$('#v-'+b.dataset.v).classList.add('on');});
+document.querySelectorAll('.num[data-n]').forEach(el=>{const t=+el.dataset.n;let c=0;const s=setInterval(()=>{c+=Math.ceil(t/40);if(c>=t){c=t;clearInterval(s)}el.textContent=c.toLocaleString()},30)});
+let queue=[
+ {id:1,c:'Photo: "MADRID WHOLECAR 2026"',by:'KOZE',r:'Stolen content / repost',f:'p-bad',ft:'AI: duplicate'},
+ {id:2,c:'Comment on "Piece of the Week"',by:'xXspam_bot99',r:'Link flood (casino)',f:'p-bad',ft:'AI: spam 98%'},
+ {id:3,c:'Pin: "Legal wall — Praga"',by:'ANON_447',r:'Wrong location',f:'p-warn',ft:'user report'},
+ {id:4,c:'Photo: "rooftop tag warszawa"',by:'SEWR',r:'Faces visible, no consent',f:'p-warn',ft:'AI: NSFW-check'}];
+function renderQueue(){
+ $('#queue').innerHTML=queue.map(q=>`<tr><td>${q.c}</td><td>${q.by}</td><td>${q.r}</td><td><span class="pill ${q.f}">${q.ft}</span></td>
+ <td class="actions"><button class="btn bad" onclick="mod(${q.id},'deleted')">Delete</button><button class="btn warn" onclick="mod(${q.id},'user warned')">Warn</button><button class="btn ok" onclick="mod(${q.id},'dismissed')">Dismiss</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--ok);padding:24px">✔ Wall is clean — queue empty</td></tr>';
+ $('#qn').textContent=queue.length;$('#qcount').textContent=queue.length?`(${queue.length})`:'';}
+function mod(id,a){const q=queue.find(x=>x.id===id);queue=queue.filter(x=>x.id!==id);renderQueue();toast(`"${q.c}" ${a}`)}
+renderQueue();
+let posts=[
+ {t:'Piece of the Week: FUSE burns Gdańsk yard',s:'p-ok',st:'Published'},
+ {t:'Interview: 20 years on the ring line',s:'p-warn',st:'Draft'},
+ {t:'Jam recap: Concrete Sessions vol.4',s:'p-cyan',st:'Scheduled'}];
+function renderPosts(){$('#posts').innerHTML=posts.map((p,i)=>`<tr><td>${p.t}</td><td><span class="pill ${p.s}">${p.st}</span></td>
+ <td class="actions"><button class="btn" onclick="toast('Editor opened (mock)')">Edit</button><button class="btn bad" onclick="delPost(${i})">✕</button></td></tr>`).join('')}
+function delPost(i){posts.splice(i,1);renderPosts();toast('Post deleted')}
+renderPosts();
+function publish(){const t=$('#ptitle').value.trim()||'Untitled piece';posts.unshift({t:t+' ['+$('#pcat').value+']',s:'p-ok',st:'Published'});renderPosts();$('#ptitle').value='';$('#pbody').value='';toast('🚀 Published to the zine!')}
+function saveDraft(){const t=$('#ptitle').value.trim()||'Untitled draft';posts.unshift({t:t,s:'p-warn',st:'Draft'});renderPosts();toast('Draft saved')}
+let bots=[
+ {n:'spam_king_2026',w:'42 uploads / 6 min · same caption',c:'var(--bad)'},
+ {n:'crypto_lisa88',w:'DM flood: 310 messages / hour',c:'var(--bad)'},
+ {n:'wallhugger_x',w:'Disposable email · datacenter IP',c:'var(--warn)'},
+ {n:'props_farmer',w:'Self-props from 14 sockpuppets',c:'var(--warn)'}];
+function renderBots(){$('#botfeed').innerHTML=bots.map((b,i)=>`<div class="fitem"><span class="ico" style="background:${b.c}"></span>
+ <div><b>${b.n}</b><br><span style="color:var(--dim)">${b.w}</span>
+ <div class="actions" style="margin-top:6px"><button class="btn bad" onclick="botBan(${i})">Ban</button>
+ <button class="btn warn" onclick="toast('${b.n} shadow-banned — screams into the void')">Shadow-ban</button>
+ <button class="btn" onclick="botClear(${i},'${b.n}')">Clear</button></div></div><time>now</time></div>`).join('')||'<div class="fitem" style="color:var(--ok)">✔ No active bot threats</div>'}
+function botBan(i){const n=bots[i].n;bots.splice(i,1);renderBots();toast(n+' banned & purged')}
+function botClear(i,n){bots.splice(i,1);renderBots();toast(n+' cleared — false positive')}
+renderBots();
+const rules=[['Cloudflare Turnstile on signup/login',1],['Rate limit uploads & comments',1],['Auto-flag link floods',1],['Shadow-ban confirmed bots',1],['Block disposable emails',1],['Phone verify for events/battles',0]];
+$('#rules').innerHTML=rules.map(r=>`<div class="sw">${r[0]}<button class="tgl ${r[1]?'on':''}" onclick="this.classList.toggle('on');toast('Rule updated')"></button></div>`).join('');
+let users=[
+ {n:'KOZE',p:'12.4k',u:342,s:['p-ok','verified local']},{n:'FUSE',p:'9.1k',u:267,s:['p-ok','active']},
+ {n:'SEWR',p:'7.8k',u:198,s:['p-cyan','moderator']},{n:'ANON_447',p:'213',u:12,s:['p-warn','new']},
+ {n:'xXspam_bot99',p:'0',u:41,s:['p-bad','flagged']}];
+function renderUsers(){$('#users').innerHTML=users.map((u,i)=>`<tr><td><b>${u.n}</b></td><td>${u.p}</td><td>${u.u}</td><td><span class="pill ${u.s[0]}">${u.s[1]}</span></td>
+ <td class="actions"><button class="btn" onclick="toast('Profile of ${u.n} (mock)')">View</button>
+ <button class="btn warn" onclick="toast('${u.n} shadow-banned')">Shadow</button>
+ <button class="btn bad" onclick="userBan(${i},'${u.n}')">Ban</button></td></tr>`).join('')}
+function userBan(i,n){users.splice(i,1);renderUsers();toast(n+' banned')}
+renderUsers();
+let pins=[
+ {s:'Abandoned factory wall',c:'Warszawa',t:['p-mag','spot'],d:'2h ago'},
+ {s:'Hall of Fame — Łódź Kaliska',c:'Łódź',t:['p-cyan','hall of fame'],d:'5h ago'},
+ {s:'Legal wall under bridge',c:'Kraków',t:['p-ok','legal wall'],d:'1d ago'}];
+function renderPins(){$('#pins').innerHTML=pins.map((p,i)=>`<tr><td><b>${p.s}</b></td><td>${p.c}</td><td><span class="pill ${p.t[0]}">${p.t[1]}</span></td><td>${p.d}</td>
+ <td class="actions"><button class="btn ok" onclick="pinAct(${i},'Pin approved — live on the map 📍')">Approve</button>
+ <button class="btn" onclick="toast('Merged with existing spot')">Merge dup</button>
+ <button class="btn bad" onclick="pinAct(${i},'Pin rejected')">Reject</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--ok);padding:20px">✔ No pending pins</td></tr>'}
+function pinAct(i,m){pins.splice(i,1);renderPins();toast(m)}
+renderPins();
+const cfg=[['Anonymous uploads enabled',1],['Comments require account',1],['PWA push notifications',1],['Maintenance mode',0],['NSFW AI pre-filter',1]];
+$('#cfg').innerHTML=cfg.map(c=>`<div class="sw">${c[0]}<button class="tgl ${c[1]?'on':''}" onclick="this.classList.toggle('on');toast('Config saved')"></button></div>`).join('');
+const live=[['var(--yellow)','FUSE uploaded "chrome on steel — EP08"'],['var(--cyan)','New pin submitted: Gdynia shipyard spot'],['var(--magenta)','Battle "Night Freights": +37 votes last hour'],['var(--ok)','SEWR approved 3 event submissions'],['var(--bad)','Turnstile blocked 12 bot signups'],['var(--yellow)','KOZE hit 12,000 props 🎉']];
+function pushLive(){const [c,m]=live[Math.floor(Math.random()*live.length)];
+ const d=document.createElement('div');d.className='fitem';d.innerHTML=`<span class="ico" style="background:${c}"></span><div>${m}</div><time>${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</time>`;
+ const f=$('#livefeed');f.prepend(d);while(f.children.length>10)f.lastChild.remove()}
+pushLive();pushLive();pushLive();setInterval(pushLive,5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#161616">
+<title>BRICK CITY MASHIN'</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Brick City Mashin%27","short_name":"BCM","start_url":".","display":"standalone","background_color":"%23161616","theme_color":"%23161616"}'>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --bg:#161616; --bg2:#1f1f1f; --bg3:#262626; --line:#333;
+  --txt:#e8e4dc; --dim:#8a8a8a;
+  --brick:#a34a2a; --yellow:#f5d90a; --magenta:#e01e84; --cyan:#00c2d1;
+  --ok:#4caf6d; --warn:#f5a90a; --bad:#e04545;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px)}
+h1,h2,h3,.stencil{font-family:'Arial Black',Impact,sans-serif;letter-spacing:.03em;text-transform:uppercase}
+button{cursor:pointer;font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:5px}
+/* ============ TOP BAR ============ */
+header{position:sticky;top:0;z-index:50;background:rgba(22,22,22,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 18px}
+.logo{font-family:'Arial Black';font-size:1.15rem;line-height:1.05;color:var(--yellow);text-shadow:2px 2px 0 var(--brick);cursor:pointer;text-transform:uppercase}
+.logo small{display:block;font-size:.55rem;letter-spacing:.3em;color:var(--dim);text-shadow:none;font-family:'Space Grotesk'}
+nav.pub{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+nav.pub button{background:none;border:none;color:var(--dim);padding:8px 12px;font-size:.85rem;border-bottom:2px solid transparent;font-weight:600}
+nav.pub button:hover{color:var(--txt)}
+nav.pub button.active{color:var(--yellow);border-bottom-color:var(--magenta)}
+.adm-toggle{margin-left:8px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:7px 12px;font-size:.8rem}
+.adm-toggle:hover{border-color:var(--yellow)}
+.adm-toggle.on{background:var(--brick);border-color:var(--brick);color:#fff}
+/* ============ VIEWS ============ */
+main{max-width:1240px;margin:0 auto;padding:22px 18px 90px}
+.view{display:none}.view.on{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.sub{color:var(--dim);font-size:.86rem;margin-bottom:18px}
+/* hero */
+.hero{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:60px 30px;margin-bottom:22px;
+  background:linear-gradient(135deg,#1c1c1c 0%,#242019 55%,#2a1a12 100%)}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;
+  background:repeating-linear-gradient(90deg,transparent 0 60px,#000 60px 62px),radial-gradient(circle at 80% 20%,var(--magenta) 0 2px,transparent 3px),radial-gradient(circle at 20% 80%,var(--cyan) 0 2px,transparent 3px)}
+.hero h1{font-size:clamp(1.8rem,5vw,3.4rem);color:var(--yellow);text-shadow:3px 3px 0 var(--brick),6px 6px 0 rgba(0,0,0,.4);line-height:1.05}
+.hero h1 em{color:var(--magenta);font-style:normal}
+.hero p{color:var(--dim);max-width:520px;margin:14px 0 20px}
+.spraytag{position:absolute;right:26px;bottom:18px;font-family:'Comic Sans MS',cursive;color:var(--cyan);opacity:.7;transform:rotate(-6deg);font-size:1.1rem}
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--bg3);color:var(--txt);padding:7px 13px;border-radius:7px;font-size:.8rem}
+.btn:hover{border-color:var(--yellow)}
+.btn.primary{background:var(--yellow);color:#111;border-color:var(--yellow);font-weight:700}
+.btn.primary:hover{background:var(--magenta);border-color:var(--magenta);color:#fff}
+.btn.bad{color:var(--bad)}.btn.bad:hover{border-color:var(--bad);background:rgba(224,69,69,.1)}
+.btn.ok{color:var(--ok)}.btn.ok:hover{border-color:var(--ok);background:rgba(76,175,109,.1)}
+.btn.warn{color:var(--warn)}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+/* grid & cards */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:18px}
+.card h2{font-size:.9rem;color:var(--yellow);margin-bottom:12px}
+.stat .num{font-size:2rem;font-weight:800;font-family:'Arial Black'}
+.stat .lbl{color:var(--dim);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em}
+/* gallery masonry */
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.chip{background:var(--bg3);border:1px solid var(--line);border-radius:20px;padding:5px 13px;font-size:.78rem}
+.chip:hover{border-color:var(--yellow)}
+.chip.on{background:var(--yellow);color:#111;border-color:var(--yellow);font-weight:700}
+.masonry{columns:4 240px;column-gap:14px}
+.piece{break-inside:avoid;margin-bottom:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2);transition:transform .2s}
+.piece:hover{transform:translateY(-3px);border-color:#4a4a4a}
+.piece .art{width:100%;display:flex;align-items:center;justify-content:center;font-family:'Arial Black';color:#111;text-shadow:1px 1px 0 rgba(255,255,255,.25);letter-spacing:.05em;position:relative;overflow:hidden}
+.piece .art::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.18),transparent 60%),repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.08) 3px 4px)}
+.piece .meta{padding:10px 12px}
+.piece .meta b{font-size:.85rem}
+.piece .meta .inf{color:var(--dim);font-size:.73rem;margin:2px 0 8px}
+.props{background:none;border:1px solid var(--line);border-radius:16px;padding:3px 11px;font-size:.75rem;color:var(--dim)}
+.props:hover{border-color:var(--yellow);color:var(--yellow)}
+.props.gave{color:var(--yellow);border-color:var(--yellow)}
+/* map */
+#map{height:520px;border-radius:12px;border:1px solid var(--line);filter:grayscale(.4) invert(.9) hue-rotate(180deg) brightness(.9)}
+.mapwrap{position:relative}
+.maphint{position:absolute;top:12px;left:56px;z-index:60;background:rgba(22,22,22,.9);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:.78rem;color:var(--dim)}
+.leaflet-container{background:#111}
+/* feed & news */
+.fitem{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #2a2a2a;font-size:.85rem;align-items:flex-start}
+.fitem .ico{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.zine{display:grid;gap:16px}
+.post{border:1px solid var(--line);border-radius:11px;background:var(--bg2);padding:20px;position:relative}
+.post::before{content:"";position:absolute;top:-8px;left:30px;width:70px;height:16px;background:rgba(245,217,10,.25);transform:rotate(-2deg);border-radius:2px}
+.post .cat{font-size:.68rem;text-transform:uppercase;letter-spacing:.15em;color:var(--magenta)}
+.post h3{margin:6px 0 8px;font-size:1.05rem}
+.post p{color:#b8b4ab;font-size:.88rem;line-height:1.55}
+.post time{color:var(--dim);font-size:.72rem;display:block;margin-top:10px}
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th{color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em}
+td{padding:9px 10px;border-bottom:1px solid #2a2a2a}
+tr:hover td{background:#242424}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.p-ok{background:rgba(76,175,109,.15);color:var(--ok)}.p-warn{background:rgba(245,169,10,.15);color:var(--warn)}
+.p-bad{background:rgba(224,69,69,.15);color:var(--bad)}.p-cyan{background:rgba(0,194,209,.15);color:var(--cyan)}
+.p-mag{background:rgba(224,30,132,.15);color:var(--magenta)}
+/* forms */
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:.88rem;font-family:inherit}
+input:focus,textarea:focus{outline:none;border-color:var(--yellow)}
+label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin:14px 0 6px}
+.frow{display:flex;gap:12px}.frow>*{flex:1}
+/* battle */
+.entry{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
+.entry .art{height:130px;display:flex;align-items:center;justify-content:center;font-family:'Arial Black';color:#111;font-size:1.3rem;position:relative}
+.entry .art::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.08) 3px 4px)}
+.entry .bm{padding:10px 12px;display:flex;justify-content:space-between;align-items:center;font-size:.8rem}
+/* toast */
+#toast{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.tst{background:var(--bg3);border:1px solid var(--yellow);border-left:4px solid var(--yellow);padding:11px 15px;border-radius:8px;font-size:.84rem;animation:slide .3s;max-width:330px}
+@keyframes slide{from{transform:translateX(30px);opacity:0}}
+/* admin layout */
+.admwrap{display:flex;gap:20px;align-items:flex-start}
+.admside{width:190px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;position:sticky;top:76px}
+.admside button{background:none;border:1px solid transparent;border-left:3px solid transparent;color:var(--dim);text-align:left;padding:9px 12px;border-radius:6px;font-size:.85rem}
+.admside button:hover{background:var(--bg3);color:var(--txt)}
+.admside button.active{background:var(--bg3);color:var(--yellow);border-left-color:var(--magenta)}
+.admmain{flex:1;min-width:0}
+.aview{display:none}.aview.on{display:block;animation:fade .25s}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #2a2a2a;font-size:.85rem;gap:10px}
+.tgl{width:42px;height:22px;background:#333;border-radius:20px;position:relative;cursor:pointer;transition:.2s;border:none;flex-shrink:0}
+.tgl::after{content:"";position:absolute;width:16px;height:16px;background:#888;border-radius:50%;top:3px;left:3px;transition:.2s}
+.tgl.on{background:var(--brick)}.tgl.on::after{left:23px;background:var(--yellow)}
+/* profile */
+.pfhead{display:flex;gap:18px;align-items:center;margin-bottom:20px}
+.avatar{width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,var(--brick),var(--magenta));display:flex;align-items:center;justify-content:center;font-family:'Arial Black';font-size:1.7rem;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.4);border:2px solid var(--yellow)}
+.badge{display:inline-block;background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:.72rem;margin:3px 3px 0 0;color:var(--cyan)}
+
+.ic{width:14px;height:14px;vertical-align:-2px;display:inline-block}
+h2 .ic,.card h2 .ic{width:16px;height:16px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin:0 2px}
+
+/* login modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,10,10,.8);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--line);border-top:4px solid var(--brick);border-radius:12px;padding:28px;width:100%;max-width:380px;animation:fade .25s}
+.modal h2{font-size:1rem;color:var(--yellow);margin-bottom:4px}
+.modal .sub{margin-bottom:6px}
+.lerr{color:var(--bad);font-size:.8rem;min-height:18px;margin-top:8px}
+.logout{position:absolute;top:18px;right:18px}
+/* deploy badge */
+.deploybar{background:linear-gradient(90deg,var(--brick),#7a3320);color:#fff;font-size:.75rem;text-align:center;padding:5px;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:860px){
+  .masonry{columns:2 150px}
+  nav.pub button{padding:8px 7px;font-size:.78rem}
+  .admwrap{flex-direction:column}.admside{flex-direction:row;width:100%;overflow-x:auto;position:static}
+  #map{height:380px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo" onclick="go('home')">Brick City<br>Mashin'<small>SPRAY THE MAP</small></div>
+    <nav class="pub" id="pubnav">
+      <button data-v="home" class="active">Home</button>
+      <button data-v="gallery">Gallery</button>
+      <button data-v="mapv">Map</button>
+      <button data-v="news">News</button>
+      <button data-v="events">Events</button>
+      <button data-v="battle">Battles</button>
+      <button data-v="upload">+ Drop</button>
+      <button data-v="profile">Profile</button>
+    </nav>
+    <button class="adm-toggle" id="admbtn" onclick="toggleAdmin()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 7a4 4 0 105 5l4 4-3 3-4-4a4 4 0 01-5-5L4 7l3-1 1 3 3-1-1-3 4 2z"/></svg> Admin</button>
+  </div>
+</header>
+<main>
+<!-- ================= PUBLIC VIEWS ================= -->
+<section class="view on" id="v-home">
+  <div class="hero">
+    <h1>Brick City<br><em>Mashin'</em></h1>
+    <p>The wall is yours. Drop pieces, tag spots on the map, battle crews worldwide — anonymous, free, no corporate buff.</p>
+    <div class="actions">
+      <button class="btn primary" onclick="go('upload')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="8" height="13" rx="2"/><path d="M10 8V5h4v3M12 5V3M9 12h6"/></svg> Drop your piece</button>
+      <button class="btn" onclick="go('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Tag the map</button>
+      <button class="btn" onclick="go('battle')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l7 7M4 4v4M4 4h4M20 4l-7 7M20 4v4M20 4h-4M7 15l-3 5 2 2 5-3M17 15l3 5-2 2-5-3"/></svg> Join the battle</button>
+    </div>
+    <div class="spraytag">~ bcm crew was here ~</div>
+  </div>
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="card stat"><div class="num" id="stPhotos">0</div><div class="lbl">Pieces on the wall</div></div>
+    <div class="card stat"><div class="num" id="stWriters">0</div><div class="lbl">Writers</div></div>
+    <div class="card stat"><div class="num" id="stPins">0</div><div class="lbl">Spots tagged</div></div>
+    <div class="card stat"><div class="num" id="stEvents">0</div><div class="lbl">Upcoming events</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 4 6 6 6 11a6 6 0 01-12 0c0-5 4-7 6-11z"/></svg> Fresh on the wall</h2><div id="homefeed" class="masonry" style="columns:2 140px"></div></div>
+    <div class="card"><h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Next up</h2><div id="homeevents"></div>
+      <h2 style="margin-top:18px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="15" height="16" rx="2"/><path d="M18 8h3v10a2 2 0 01-2 2M7 9h7M7 13h7M7 17h5"/></svg> Latest from the zine</h2><div id="homenews"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-gallery">
+  <h1>Gallery</h1><p class="sub">The wall — every piece, every style</p>
+  <div class="filters" id="galFilters"></div>
+  <div class="masonry" id="gallery"></div>
+</section>
+
+<section class="view" id="v-mapv">
+  <h1>Spot Map</h1><p class="sub">Click anywhere on the map to tag a new spot (goes to moderation)</p>
+  <div class="mapwrap">
+    <div id="map"></div>
+    <div class="maphint"><span class="dot" style="background:#f5d90a"></span> legal wall · <span class="dot" style="background:#e01e84"></span> spot · <span class="dot" style="background:#00c2d1"></span> hall of fame · <span class="dot" style="background:#e04545"></span> event</div>
+  </div>
+</section>
+
+<section class="view" id="v-news">
+  <h1>The Zine</h1><p class="sub">Scene news, interviews, piece of the week — straight from the CMS</p>
+  <div class="zine" id="newslist"></div>
+</section>
+
+<section class="view" id="v-events">
+  <h1>Events</h1><p class="sub">Jams, battles, exhibitions — submit yours (moderated)</p>
+  <div class="grid g2">
+    <div class="card"><h2>Upcoming</h2><div id="eventlist"></div></div>
+    <div class="card"><h2>Submit event</h2>
+      <label>Name</label><input id="evName" placeholder="Concrete Sessions vol.5">
+      <div class="frow"><div><label>City</label><input id="evCity" placeholder="Warszawa"></div>
+      <div><label>Date</label><input id="evDate" type="date"></div></div>
+      <label>Type</label><select id="evType"><option>Jam</option><option>Battle</option><option>Exhibition</option><option>Legal paint session</option></select>
+      <div class="actions" style="margin-top:14px"><button class="btn primary" onclick="submitEvent()">Submit for approval</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-battle">
+  <h1>Battles</h1><p class="sub">Current theme: <b style="color:var(--magenta)">“NIGHT FREIGHTS”</b> — vote for your favorite burner</p>
+  <div class="grid g3" id="battlegrid"></div>
+  <div class="card" style="margin-top:16px"><h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10v5a5 5 0 01-10 0V4zM7 5H4v2a3 3 0 003 3M17 5h3v2a3 3 0 01-3 3M12 14v4M8 21h8M10 18h4"/></svg> Past winners</h2>
+    <table><tr><td>“Chrome &amp; Rust”</td><td>KOZE</td><td><span class="pill p-ok">1,842 votes</span></td></tr>
+    <tr><td>“Rooftop Kings”</td><td>FUSE</td><td><span class="pill p-ok">1,390 votes</span></td></tr></table>
+  </div>
+</section>
+
+<section class="view" id="v-upload">
+  <h1>Drop your piece</h1><p class="sub">Anonymous by default. You keep all rights — always.</p>
+  <div class="grid g2">
+    <div class="card"><h2>Upload</h2>
+      <label>Photo</label><input type="file" accept="image/*" onchange="toast('Photo staged (mock)')">
+      <label>Title / piece name</label><input id="upTitle" placeholder="chrome on steel — EP08">
+      <div class="frow">
+        <div><label>Category</label><select id="upCat"><option>Tags</option><option>Throw-ups</option><option>Pieces</option><option>Bombing</option><option>Trains</option><option>Freights</option><option>Stencils</option><option>Stickers</option><option>Legal Walls</option></select></div>
+        <div><label>City (optional)</label><input id="upCity" placeholder="Łódź"></div>
+      </div>
+      <div class="sw" style="margin-top:14px">Post anonymously<button class="tgl on" id="upAnon" onclick="this.classList.toggle('on')"></button></div>
+      <div class="actions" style="margin-top:16px"><button class="btn primary" onclick="doUpload()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="8" height="13" rx="2"/><path d="M10 8V5h4v3M12 5V3M9 12h6"/></svg> Hit the wall</button></div>
+    </div>
+    <div class="card"><h2>House rules</h2>
+      <div class="fitem"><span class="ico" style="background:var(--ok)"></span><div>You keep 100% rights to your photos. No sneaky licenses.</div></div>
+      <div class="fitem"><span class="ico" style="background:var(--yellow)"></span><div>No faces without consent — AI pre-filter + moderation.</div></div>
+      <div class="fitem"><span class="ico" style="background:var(--cyan)"></span><div>Spot locations stay vague — exact GPS only if you say so.</div></div>
+      <div class="fitem"><span class="ico" style="background:var(--bad)"></span><div>Bots &amp; spam farms get shadow-banned into the void.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-profile">
+  <div class="pfhead">
+    <div class="avatar">KW</div>
+    <div>
+      <h1>KREW_WOLF</h1>
+      <p class="sub" style="margin:4px 0">Warszawa · painting since 2019 · <span class="pill p-ok">verified local</span></p>
+      <span class="badge"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10v5a5 5 0 01-10 0V4zM7 5H4v2a3 3 0 003 3M17 5h3v2a3 3 0 01-3 3M12 14v4M8 21h8M10 18h4"/></svg> 2 battle wins</span><span class="badge"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> 38 spots tagged</span><span class="badge"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 4 6 6 6 11a6 6 0 01-12 0c0-5 4-7 6-11z"/></svg> 4.2k props</span>
+    </div>
+  </div>
+  <h2 style="font-size:.9rem;color:var(--yellow);margin-bottom:12px">Your pieces</h2>
+  <div class="masonry" id="mywall" style="columns:3 180px"></div>
+</section>
+
+<!-- ================= ADMIN ================= -->
+<section class="view" id="v-admin">
+  <h1>Admin Panel</h1><p class="sub">Brick City Mashin' CMS — wall stays clean</p>
+  <div class="admwrap">
+    <div class="admside" id="admnav">
+      <button data-a="dash" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg> Dashboard</button>
+      <button data-a="cms"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="15" height="16" rx="2"/><path d="M18 8h3v10a2 2 0 01-2 2M7 9h7M7 13h7M7 17h5"/></svg> CMS / News</button>
+      <button data-a="mod"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg> Moderation <b id="qcount" style="color:var(--bad)"></b></button>
+      <button data-a="bots"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 8V4M9 4h6"/><circle cx="9.5" cy="13" r="1" fill="currentColor"/><circle cx="14.5" cy="13" r="1" fill="currentColor"/></svg> Bot Control</button>
+      <button data-a="users"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg> Users</button>
+      <button data-a="pins"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Pin Queue</button>
+      <button data-a="set"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg> Settings</button>
+    </div>
+    <div class="admmain">
+      <div class="aview on" id="a-dash">
+        <div class="grid g4">
+          <div class="card stat"><div class="num" id="aWriters">0</div><div class="lbl">Total users</div></div>
+          <div class="card stat"><div class="num" id="aUploads">0</div><div class="lbl">Pieces live</div></div>
+          <div class="card stat"><div class="num" id="aReports">0</div><div class="lbl">Reports in queue</div></div>
+          <div class="card stat"><div class="num" id="aPins">0</div><div class="lbl">Pins pending</div></div>
+        </div>
+        <div class="grid g2" style="margin-top:16px">
+          <div class="card"><h2>Live activity</h2><div id="livefeed"></div></div>
+          <div class="card"><h2>Active battle</h2>
+            <p style="font-weight:700">“NIGHT FREIGHTS” <span class="pill p-mag">voting open</span></p>
+            <p class="sub" style="margin:6px 0 14px" id="battlestat"></p>
+            <div class="actions"><button class="btn primary" onclick="toast('Voting closed. Winner crowned!')">Close voting &amp; crown winner</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="aview" id="a-cms">
+        <div class="grid g2">
+          <div class="card"><h2>New post → publishes to “The Zine”</h2>
+            <label>Title</label><input id="ptitle" placeholder="Piece of the Week: KOZE burns the ring line">
+            <label>Category</label><select id="pcat"><option>Piece of the Week</option><option>Interview</option><option>Scene news</option><option>Jam recap</option><option>Announcement</option></select>
+            <label>Body</label><textarea id="pbody" rows="5" placeholder="Write it raw..."></textarea>
+            <div class="actions" style="margin-top:14px">
+              <button class="btn" onclick="saveDraft()">Save draft</button>
+              <button class="btn primary" onclick="publish()">Publish now</button>
+            </div>
+          </div>
+          <div class="card"><h2>All posts</h2><table><thead><tr><th>Title</th><th>Status</th><th></th></tr></thead><tbody id="posts"></tbody></table></div>
+        </div>
+      </div>
+      <div class="aview" id="a-mod">
+        <div class="card"><h2>Report queue</h2><table><thead><tr><th>Content</th><th>By</th><th>Reason</th><th>Flag</th><th>Actions</th></tr></thead><tbody id="queue"></tbody></table></div>
+      </div>
+      <div class="aview" id="a-bots">
+        <div class="grid g2">
+          <div class="card"><h2>Flagged accounts (live)</h2><div id="botfeed"></div></div>
+          <div class="card"><h2>Protection rules</h2><div id="rules"></div>
+            <label>Upload rate limit / hour</label><input type="number" value="10" style="width:100px" onchange="toast('Rate limit updated')">
+            <label>Keyword blacklist</label><input value="casino, crypto, free followers" onchange="toast('Blacklist updated')">
+          </div>
+        </div>
+      </div>
+      <div class="aview" id="a-users">
+        <div class="card"><h2>Writers</h2><table><thead><tr><th>Writer</th><th>Props</th><th>Uploads</th><th>Status</th><th>Actions</th></tr></thead><tbody id="users"></tbody></table></div>
+      </div>
+      <div class="aview" id="a-pins">
+        <div class="card"><h2>Pending map pins — approved go live on the public map</h2>
+          <table><thead><tr><th>Spot</th><th>City</th><th>Type</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="pinq"></tbody></table>
+        </div>
+        <div class="card" style="margin-top:16px"><h2>Pending events — approved go live on Events page</h2>
+          <table><thead><tr><th>Event</th><th>City</th><th>Type</th><th>Actions</th></tr></thead><tbody id="evq"></tbody></table>
+        </div>
+      </div>
+      <div class="aview" id="a-set">
+        <div class="grid g2">
+          <div class="card"><h2>Push broadcast (PWA)</h2>
+            <label>Message</label><textarea rows="3" id="pushmsg" placeholder="Battle ends tonight — cast your votes!"></textarea>
+            <div class="actions" style="margin-top:12px"><button class="btn primary" onclick="toast('Push sent to 6,214 devices')">Send broadcast</button></div>
+          </div>
+          <div class="card"><h2>Site config</h2><div id="cfg"></div>
+            <div class="actions" style="margin-top:14px"><button class="btn" onclick="toast('Backup exported')">Export backup</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="modal-bg" id="loginBg">
+  <div class="modal">
+    <h2>Admin Access</h2>
+    <p class="sub">Restricted area — crew only</p>
+    <label>Login</label><input id="lUser" autocomplete="username" placeholder="admin">
+    <label>Password</label><input id="lPass" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div class="lerr" id="lErr"></div>
+    <div class="actions" style="margin-top:6px">
+      <button class="btn primary" style="flex:1" onclick="tryLogin()">Enter the panel</button>
+      <button class="btn" onclick="closeLogin()">Cancel</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* =================== SHARED STATE (jeden "backend" w pamięci) =================== */
+const DB={
+ photos:[
+  {t:'MADRID WHOLECAR',a:'KOZE',cat:'Trains',city:'Madrid',props:412,c1:'#f5d90a',c2:'#a34a2a',h:190},
+  {t:'night shift',a:'FUSE',cat:'Freights',city:'Gdańsk',props:288,c1:'#00c2d1',c2:'#1a3a4a',h:150},
+  {t:'Rooftop kings',a:'SEWR',cat:'Bombing',city:'Warszawa',props:341,c1:'#e01e84',c2:'#4a1030',h:220},
+  {t:'concrete bloom',a:'MIRA',cat:'Stencils',city:'Kraków',props:97,c1:'#e8e4dc',c2:'#3a3a3a',h:140},
+  {t:'tag bang theory',a:'KREW_WOLF',cat:'Tags',city:'Warszawa',props:156,c1:'#f5d90a',c2:'#262626',h:120},
+  {t:'freight therapy',a:'KOZE',cat:'Freights',city:'Łódź',props:230,c1:'#a34a2a',c2:'#1a1a1a',h:180},
+  {t:'sticker slap city',a:'ANON_447',cat:'Stickers',city:'Poznań',props:45,c1:'#00c2d1',c2:'#0a2a2e',h:110},
+  {t:'wildstyle sermon',a:'FUSE',cat:'Pieces',city:'Berlin',props:503,c1:'#e01e84',c2:'#2a0a2e',h:210},
+  {t:'legal eagle wall',a:'MIRA',cat:'Legal Walls',city:'Wrocław',props:178,c1:'#8a8a8a',c2:'#1f1f1f',h:160},
+  {t:'throwie blitz',a:'KREW_WOLF',cat:'Throw-ups',city:'Warszawa',props:132,c1:'#f5d90a',c2:'#3a1010',h:145},
+  {t:'ring line runner',a:'SEWR',cat:'Trains',city:'Katowice',props:264,c1:'#00c2d1',c2:'#22221a',h:195},
+  {t:'buff fighter',a:'ANON_447',cat:'Bombing',city:'Gdynia',props:88,c1:'#e8e4dc',c2:'#2e1a0a',h:130}],
+ posts:[
+  {t:'Piece of the Week: FUSE burns Gdańsk yard',cat:'Piece of the Week',b:'A wholecar in pure chrome with magenta outlines dropped overnight at the freight yard. Clean lines, zero mercy. The buff will cry.',st:'Published',d:'2 days ago'},
+  {t:'Interview: 20 years on the ring line',cat:'Interview',b:'SEWR talks shop: from mop tags in 2006 to curated legal walls today. “The scene changed, the hunger didn\u2019t.”',st:'Published',d:'5 days ago'},
+  {t:'Jam recap: Concrete Sessions vol.4',cat:'Jam recap',b:'120 writers, 400 meters of wall, one sunburned weekend. Full photo report inside.',st:'Published',d:'1 week ago'},
+  {t:'New stickers pack in works',cat:'Announcement',b:'BCM slap packs — vote on the design in the comments.',st:'Draft',d:'—'}],
+ pins:[
+  {s:'Hall of Fame — Łódź Kaliska',city:'Łódź',type:'hall of fame',lat:51.767,lng:19.457,st:'live'},
+  {s:'Legal wall under bridge',city:'Kraków',type:'legal wall',lat:50.046,lng:19.935,st:'live'},
+  {s:'Abandoned factory wall',city:'Warszawa',type:'spot',lat:52.23,lng:21.01,st:'live'},
+  {s:'Gdynia shipyard spot',city:'Gdynia',type:'spot',lat:54.52,lng:18.53,st:'pending'},
+  {s:'Legal wall — Praga',city:'Warszawa',type:'legal wall',lat:52.255,lng:21.045,st:'pending'}],
+ events:[
+  {n:'Concrete Sessions vol.5',city:'Warszawa',type:'Jam',date:'2026-08-15',st:'live'},
+  {n:'Battle of the Baltic',city:'Gdańsk',type:'Battle',date:'2026-08-29',st:'live'},
+  {n:'Walls of Freedom — group show',city:'Berlin',type:'Exhibition',date:'2026-09-05',st:'pending'}],
+ queue:[
+  {id:1,c:'Photo: "MADRID WHOLECAR 2026"',by:'ANON_447',r:'Stolen content / repost',f:'p-bad',ft:'AI: duplicate'},
+  {id:2,c:'Comment on "Piece of the Week"',by:'xXspam_bot99',r:'Link flood (casino)',f:'p-bad',ft:'AI: spam 98%'},
+  {id:3,c:'Photo: "rooftop tag wawa"',by:'SEWR',r:'Faces visible, no consent',f:'p-warn',ft:'AI: NSFW-check'}],
+ bots:[
+  {n:'spam_king_2026',w:'42 uploads / 6 min · same caption',c:'var(--bad)'},
+  {n:'crypto_lisa88',w:'DM flood: 310 messages / hour',c:'var(--bad)'},
+  {n:'props_farmer',w:'Self-props from 14 sockpuppets',c:'var(--warn)'}],
+ users:[
+  {n:'KOZE',p:'12.4k',u:342,s:['p-ok','verified local']},{n:'FUSE',p:'9.1k',u:267,s:['p-ok','active']},
+  {n:'SEWR',p:'7.8k',u:198,s:['p-cyan','moderator']},{n:'MIRA',p:'3.3k',u:96,s:['p-ok','active']},
+  {n:'ANON_447',p:'213',u:12,s:['p-warn','new']},{n:'xXspam_bot99',p:'0',u:41,s:['p-bad','flagged']}],
+ battle:[
+  {n:'KOZE',t:'GHOST FREIGHT',v:486,c1:'#f5d90a',c2:'#1a1a1a'},
+  {n:'FUSE',t:'MIDNIGHT MAIL',v:452,c1:'#00c2d1',c2:'#26101a'},
+  {n:'SEWR',t:'RAIL GHOSTS',v:266,c1:'#e01e84',c2:'#101a26'}]
+};
+let gaveProps=new Set(), voted=null, adminOn=false, leafletMap=null;
+
+/* =================== AUTH (admin gate) =================== */
+const ADMIN_CREDS={u:'admin',p:'brickcity'};
+let authed=sessionStorage.getItem('bcm_auth')==='1';
+function openLogin(){$('#loginBg').classList.add('on');$('#lErr').textContent='';setTimeout(()=>$('#lUser').focus(),80)}
+function closeLogin(){$('#loginBg').classList.remove('on')}
+function tryLogin(){
+  if($('#lUser').value.trim()===ADMIN_CREDS.u && $('#lPass').value===ADMIN_CREDS.p){
+    authed=true;sessionStorage.setItem('bcm_auth','1');closeLogin();$('#lPass').value='';
+    enterAdmin();toast('Welcome back, boss.');
+  }else{$('#lErr').textContent='Wrong credentials — the wall stays closed.'}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#loginBg').classList.contains('on'))tryLogin()});
+function logoutAdmin(){authed=false;sessionStorage.removeItem('bcm_auth');$('#admbtn').classList.remove('on');go('home');toast('Logged out. Stay up.')}
+/* =================== PERSISTENCE (localStorage) =================== */
+function saveDB(){
+  try{localStorage.setItem('bcm_db',JSON.stringify(DB));
+  localStorage.setItem('bcm_extra',JSON.stringify({props:[...gaveProps],voted}))}catch(e){}
+}
+function loadDB(){
+  try{const d=localStorage.getItem('bcm_db');if(d){const o=JSON.parse(d);Object.keys(o).forEach(k=>DB[k]=o[k])}
+  const x=localStorage.getItem('bcm_extra');if(x){const o=JSON.parse(x);gaveProps=new Set(o.props||[]);voted=o.voted}}catch(e){}
+}
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function toast(m){const t=document.createElement('div');t.className='tst';t.textContent=m;$('#toast').appendChild(t);setTimeout(()=>t.remove(),3200)}
+</script>
+<script>
+/* =================== NAVIGATION =================== */
+function go(v){
+  $$('#pubnav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  $$('main > .view').forEach(x=>x.classList.remove('on'));
+  $('#v-'+v).classList.add('on');
+  if(v==='mapv') setTimeout(initMap,60);
+  window.scrollTo({top:0});
+}
+$$('#pubnav button').forEach(b=>b.onclick=()=>{adminOn=false;$('#admbtn').classList.remove('on');go(b.dataset.v)});
+function toggleAdmin(){
+  if(!adminOn && !authed){openLogin();return}
+  if(adminOn){logoutAdmin();return}
+  enterAdmin();
+}
+function enterAdmin(){
+  adminOn=true;$('#admbtn').classList.add('on');
+  $$('#pubnav button').forEach(b=>b.classList.remove('active'));
+  $$('main > .view').forEach(x=>x.classList.remove('on'));
+  $('#v-admin').classList.add('on');renderAdminStats();window.scrollTo({top:0});
+}
+$$('#admnav button').forEach(b=>b.onclick=()=>{
+  $$('#admnav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  $$('.aview').forEach(x=>x.classList.remove('on'));$('#a-'+b.dataset.a).classList.add('on');
+});
+/* =================== PUBLIC RENDER =================== */
+function pieceHTML(p,i,mini){
+  return `<div class="piece"><div class="art" style="height:${mini?p.h*.7:p.h}px;background:linear-gradient(135deg,${p.c1},${p.c2});font-size:${mini?'.85rem':'1.05rem'}">${p.t}</div>
+  <div class="meta"><b>${p.t}</b><div class="inf">${p.a} · ${p.cat} · ${p.city||''}</div>
+  <button class="props ${gaveProps.has(i)?'gave':''}" onclick="giveProps(${i})"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> ${p.props+(gaveProps.has(i)?1:0)} props</button></div></div>`;
+}
+function giveProps(i){gaveProps.has(i)?gaveProps.delete(i):gaveProps.add(i);saveDB();renderGallery();renderHome();toast(gaveProps.has(i)?'Props given!':'Props taken back')}
+const CATS=['All','Tags','Throw-ups','Pieces','Bombing','Trains','Freights','Stencils','Stickers','Legal Walls'];
+let galCat='All';
+function renderGallery(){
+  $('#galFilters').innerHTML=CATS.map(c=>`<button class="chip ${galCat===c?'on':''}" onclick="galCat='${c}';renderGallery()">${c}</button>`).join('');
+  const list=DB.photos.map((p,i)=>({p,i})).filter(x=>galCat==='All'||x.p.cat===galCat);
+  $('#gallery').innerHTML=list.map(x=>pieceHTML(x.p,x.i)).join('');
+}
+function renderHome(){
+  const fresh=[...DB.photos].slice(-6).reverse();
+  $('#homefeed').innerHTML=fresh.map(p=>pieceHTML(p,DB.photos.indexOf(p),true)).join('');
+  const evs=DB.events.filter(e=>e.st==='live');
+  $('#homeevents').innerHTML=evs.map(e=>`<div class="fitem"><span class="ico" style="background:var(--yellow)"></span>
+    <div><b>${e.n}</b><br><span style="color:var(--dim)">${e.type} · ${e.city} · ${e.date}</span></div></div>`).join('')||'<p class="sub">No events yet.</p>';
+  const news=DB.posts.filter(p=>p.st==='Published').slice(0,2);
+  $('#homenews').innerHTML=news.map(p=>`<div class="fitem"><span class="ico" style="background:var(--magenta)"></span>
+    <div><b>${p.t}</b><br><span style="color:var(--dim)">${p.cat} · ${p.d}</span></div></div>`).join('');
+  animNum('stPhotos',DB.photos.length);animNum('stWriters',DB.users.length*2140+847);
+  animNum('stPins',DB.pins.filter(p=>p.st==='live').length);animNum('stEvents',evs.length);
+}
+function animNum(id,t){const el=document.getElementById(id);let c=0;const s=setInterval(()=>{c+=Math.max(1,Math.ceil(t/30));if(c>=t){c=t;clearInterval(s)}el.textContent=c.toLocaleString()},28)}
+function renderNews(){
+  $('#newslist').innerHTML=DB.posts.filter(p=>p.st==='Published').map(p=>`<div class="post">
+    <span class="cat">${p.cat}</span><h3>${p.t}</h3><p>${p.b}</p><time>${p.d}</time></div>`).join('');
+}
+function renderEvents(){
+  $('#eventlist').innerHTML=DB.events.filter(e=>e.st==='live').map(e=>`<div class="fitem">
+    <span class="ico" style="background:var(--cyan)"></span><div style="flex:1"><b>${e.n}</b><br>
+    <span style="color:var(--dim)">${e.type} · ${e.city} · ${e.date}</span></div>
+    <button class="btn" onclick="toast('Reminder set — push when PWA installed')">Remind me</button></div>`).join('');
+}
+function submitEvent(){
+  const n=$('#evName').value.trim();if(!n)return toast('Give the event a name!');
+  DB.events.push({n,city:$('#evCity').value||'???',type:$('#evType').value,date:$('#evDate').value||'TBA',st:'pending'});
+  $('#evName').value='';saveDB();renderPinQueue();toast('Event submitted — waiting for admin approval');
+}
+function renderBattle(){
+  const tot=DB.battle.reduce((a,b)=>a+b.v,0);
+  $('#battlegrid').innerHTML=DB.battle.map((e,i)=>`<div class="entry">
+    <div class="art" style="background:linear-gradient(135deg,${e.c1},${e.c2})">${e.t}</div>
+    <div class="bm"><div><b>${e.n}</b><br><span style="color:var(--dim)">${e.v+(voted===i?1:0)} votes · ${Math.round((e.v+(voted===i?1:0))/(tot+(voted!==null?1:0))*100)}%</span></div>
+    <button class="btn ${voted===i?'primary':''}" onclick="vote(${i})">${voted===i?'Voted':'Vote'}</button></div></div>`).join('');
+  $('#battlestat').textContent=`${DB.battle.length} finalists · ${tot+(voted!==null?1:0)} votes cast`;
+}
+function vote(i){voted=i;saveDB();renderBattle();toast('Vote locked in for '+DB.battle[i].n)}
+function doUpload(){
+  const t=$('#upTitle').value.trim()||'untitled burner';
+  const a=$('#upAnon').classList.contains('on')?'ANONYMOUS':'KREW_WOLF';
+  const cols=[['#f5d90a','#262626'],['#e01e84','#2a0a2e'],['#00c2d1','#1a3a4a'],['#a34a2a','#1a1a1a']];
+  const c=cols[Math.floor(Math.random()*cols.length)];
+  DB.photos.push({t,a,cat:$('#upCat').value,city:$('#upCity').value,props:0,c1:c[0],c2:c[1],h:120+Math.random()*100});
+  $('#upTitle').value='';saveDB();renderGallery();renderHome();renderMyWall();renderAdminStats();
+  toast('Piece is live on the wall!');go('gallery');
+}
+function renderMyWall(){
+  const mine=DB.photos.map((p,i)=>({p,i})).filter(x=>x.p.a==='KREW_WOLF');
+  $('#mywall').innerHTML=mine.map(x=>pieceHTML(x.p,x.i,true)).join('')||'<p class="sub">Nothing yet — drop your first piece!</p>';
+}
+/* =================== MAP =================== */
+function pinIcon(type){
+  const col={'legal wall':'#f5d90a','spot':'#e01e84','hall of fame':'#00c2d1','event':'#e04545'}[type]||'#f5d90a';
+  return L.divIcon({className:'',html:`<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:2px solid #111;box-shadow:0 0 8px ${col}"></div>`,iconSize:[16,16],iconAnchor:[8,16]});
+}
+function initMap(){
+  if(typeof L==='undefined'){$('#map').innerHTML='<p class="sub" style="padding:20px">Map tiles need internet — open preview online.</p>';return}
+  if(!leafletMap){
+    leafletMap=L.map('map').setView([52.1,19.4],6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(leafletMap);
+    leafletMap.on('click',e=>{
+      const name=prompt('Name this spot (goes to moderation):');
+      if(name){DB.pins.push({s:name,city:'unknown',type:'spot',lat:e.latlng.lat,lng:e.latlng.lng,st:'pending'});
+        saveDB();renderPinQueue();renderAdminStats();toast('Spot submitted — pending admin approval');}
+    });
+  }
+  leafletMap.eachLayer(l=>{if(l instanceof L.Marker)leafletMap.removeLayer(l)});
+  DB.pins.filter(p=>p.st==='live').forEach(p=>{
+    L.marker([p.lat,p.lng],{icon:pinIcon(p.type)}).addTo(leafletMap)
+     .bindPopup(`<b>${p.s}</b><br>${p.type} · ${p.city}<br><button onclick="toast('Checked in!')" style="margin-top:6px;padding:4px 10px;border-radius:6px;border:1px solid #555;background:#262626;color:#e8e4dc;cursor:pointer">Been there </button>`);
+  });
+  setTimeout(()=>leafletMap.invalidateSize(),150);
+}
+</script>
+<script>
+/* =================== ADMIN =================== */
+function renderAdminStats(){
+  animNum('aWriters',DB.users.length*2140+847);animNum('aUploads',DB.photos.length);
+  animNum('aReports',DB.queue.length);animNum('aPins',DB.pins.filter(p=>p.st==='pending').length);
+  $('#qcount').textContent=DB.queue.length?`(${DB.queue.length})`:'';
+  renderBattle();
+}
+/* --- CMS --- */
+function renderPosts(){
+  $('#posts').innerHTML=DB.posts.map((p,i)=>`<tr><td>${p.t}</td><td><span class="pill ${p.st==='Published'?'p-ok':'p-warn'}">${p.st}</span></td>
+  <td class="actions"><button class="btn bad" onclick="DB.posts.splice(${i},1);saveDB();renderPosts();renderNews();renderHome();toast('Post deleted')">×</button></td></tr>`).join('');
+}
+function publish(){
+  const t=$('#ptitle').value.trim();if(!t)return toast('Title needed!');
+  DB.posts.unshift({t,cat:$('#pcat').value,b:$('#pbody').value.trim()||'—',st:'Published',d:'just now'});
+  $('#ptitle').value='';$('#pbody').value='';saveDB();renderPosts();renderNews();renderHome();toast('Published — live in The Zine!');
+}
+function saveDraft(){saveDB();
+  const t=$('#ptitle').value.trim()||'Untitled draft';
+  DB.posts.unshift({t,cat:$('#pcat').value,b:'',st:'Draft',d:'—'});renderPosts();toast('Draft saved');
+}
+/* --- moderation --- */
+function renderQueue(){
+  $('#queue').innerHTML=DB.queue.map(q=>`<tr><td>${q.c}</td><td>${q.by}</td><td>${q.r}</td><td><span class="pill ${q.f}">${q.ft}</span></td>
+  <td class="actions"><button class="btn bad" onclick="modAct(${q.id},'deleted')">Delete</button>
+  <button class="btn warn" onclick="modAct(${q.id},'user warned')">Warn</button>
+  <button class="btn ok" onclick="modAct(${q.id},'dismissed')">Dismiss</button></td></tr>`).join('')
+  ||'<tr><td colspan="5" style="text-align:center;color:var(--ok);padding:22px">Wall is clean — queue empty</td></tr>';
+  renderAdminStats();
+}
+function modAct(id,a){const q=DB.queue.find(x=>x.id===id);DB.queue=DB.queue.filter(x=>x.id!==id);saveDB();renderQueue();toast(`"${q.c}" ${a}`)}
+/* --- bots --- */
+function renderBots(){
+  $('#botfeed').innerHTML=DB.bots.map((b,i)=>`<div class="fitem"><span class="ico" style="background:${b.c}"></span>
+  <div><b>${b.n}</b><br><span style="color:var(--dim)">${b.w}</span>
+  <div class="actions" style="margin-top:6px">
+  <button class="btn bad" onclick="DB.bots.splice(${i},1);saveDB();renderBots();toast('${b.n} banned & purged')">Ban</button>
+  <button class="btn warn" onclick="toast('${b.n} shadow-banned — screams into the void')">Shadow-ban</button>
+  <button class="btn" onclick="DB.bots.splice(${i},1);saveDB();renderBots();toast('${b.n} cleared')">Clear</button></div></div></div>`).join('')
+  ||'<div class="fitem" style="color:var(--ok)">No active bot threats</div>';
+}
+const RULES=[['Cloudflare Turnstile on signup/login',1],['Rate limit uploads & comments',1],['Auto-flag link floods',1],['Shadow-ban confirmed bots',1],['Block disposable emails',1],['Phone verify for events/battles',0]];
+/* --- users --- */
+function renderUsers(){
+  $('#users').innerHTML=DB.users.map((u,i)=>`<tr><td><b>${u.n}</b></td><td>${u.p}</td><td>${u.u}</td>
+  <td><span class="pill ${u.s[0]}">${u.s[1]}</span></td>
+  <td class="actions"><button class="btn warn" onclick="toast('${u.n} shadow-banned')">Shadow</button>
+  <button class="btn bad" onclick="DB.users.splice(${i},1);saveDB();renderUsers();toast('${u.n} banned')">Ban</button></td></tr>`).join('');
+}
+/* --- pin & event queues (łączą się z publiczną mapą i eventami!) --- */
+function renderPinQueue(){
+  const pend=DB.pins.map((p,i)=>({p,i})).filter(x=>x.p.st==='pending');
+  $('#pinq').innerHTML=pend.map(x=>`<tr><td><b>${x.p.s}</b></td><td>${x.p.city}</td>
+  <td><span class="pill p-mag">${x.p.type}</span></td><td>recently</td>
+  <td class="actions"><button class="btn ok" onclick="approvePin(${x.i})">Approve</button>
+  <button class="btn bad" onclick="rejectPin(${x.i})">Reject</button></td></tr>`).join('')
+  ||'<tr><td colspan="5" style="text-align:center;color:var(--ok);padding:18px">No pending pins</td></tr>';
+  const pev=DB.events.map((e,i)=>({e,i})).filter(x=>x.e.st==='pending');
+  $('#evq').innerHTML=pev.map(x=>`<tr><td><b>${x.e.n}</b></td><td>${x.e.city}</td>
+  <td><span class="pill p-cyan">${x.e.type}</span></td>
+  <td class="actions"><button class="btn ok" onclick="approveEvent(${x.i})">Approve</button>
+  <button class="btn bad" onclick="DB.events.splice(${x.i},1);saveDB();renderPinQueue();toast('Event rejected')">Reject</button></td></tr>`).join('')
+  ||'<tr><td colspan="5" style="text-align:center;color:var(--ok);padding:18px">No pending events</td></tr>';
+}
+function approvePin(i){DB.pins[i].st='live';saveDB();renderPinQueue();renderAdminStats();renderHome();if(leafletMap)initMap();toast('Pin approved — LIVE on the public map!')}
+function rejectPin(i){DB.pins.splice(i,1);saveDB();renderPinQueue();renderAdminStats();toast('Pin rejected')}
+function approveEvent(i){DB.events[i].st='live';saveDB();renderPinQueue();renderEvents();renderHome();toast('Event approved — LIVE on Events page!')}
+/* --- settings --- */
+const CFG=[['Anonymous uploads enabled',1],['Comments require account',1],['PWA push notifications',1],['Maintenance mode',0],['NSFW AI pre-filter',1]];
+function renderCfg(){
+  $('#cfg').innerHTML=CFG.map(c=>`<div class="sw">${c[0]}<button class="tgl ${c[1]?'on':''}" onclick="this.classList.toggle('on');toast('Config saved')"></button></div>`).join('');
+  $('#rules').innerHTML=RULES.map(r=>`<div class="sw">${r[0]}<button class="tgl ${r[1]?'on':''}" onclick="this.classList.toggle('on');toast('Rule updated')"></button></div>`).join('');
+}
+/* --- live feed --- */
+const LIVE=[['var(--yellow)','FUSE uploaded "chrome on steel — EP08"'],['var(--cyan)','New pin submitted: Gdynia shipyard'],['var(--magenta)','Battle: +37 votes last hour'],['var(--ok)','SEWR approved 3 event submissions'],['var(--bad)','Turnstile blocked 12 bot signups'],['var(--yellow)','KOZE hit 12,000 props']];
+function pushLive(){
+  const [c,m]=LIVE[Math.floor(Math.random()*LIVE.length)];
+  const d=document.createElement('div');d.className='fitem';
+  d.innerHTML=`<span class="ico" style="background:${c}"></span><div>${m}</div>`;
+  const f=$('#livefeed');f.prepend(d);while(f.children.length>9)f.lastChild.remove();
+}
+/* =================== INIT =================== */
+loadDB();
+renderGallery();renderHome();renderNews();renderEvents();renderBattle();renderMyWall();
+renderPosts();renderQueue();renderBots();renderUsers();renderPinQueue();renderCfg();
+pushLive();pushLive();pushLive();setInterval(pushLive,6000);
+if('serviceWorker' in navigator){/* PWA-ready: sw registration goes here in production */}
+</script>
+</body>
+</html>
