@@ -53,5 +53,11 @@
   "admin_flags": "FEATURE FLAGS",
   "admin_queue": "APPROVAL QUEUE",
   "admin_approve": "Approve",
-  "admin_approved": "APPROVED"
+  "admin_approved": "APPROVED",
+  "admin_stats": "STATS",
+  "admin_reports": "REPORTS",
+  "admin_pins": "PINS",
+  "admin_events": "EVENTS",
+  "admin_users": "USERS",
+  "admin_resolved": "RESOLVED"
 }

@@ -1,16 +1,31 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useT } from '../i18n/index.js';
+import { useAuth } from '../lib/session.js';
 
-// Invite page (spec §6): black screen, single input, signal caret,
-// mono whisper — YOU HEARD ABOUT US SOMEWHERE.
 export function Invite() {
   const { t } = useT();
+  const { register } = useAuth();
+  const navigate = useNavigate();
   const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [nick, setNick] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO(phase-2): wire to trpc.auth.register.mutate (invite code + account details)
-    console.log('invite code attempt', { code });
+    setError(null);
+    setLoading(true);
+    try {
+      await register(email, nick, password, code);
+      navigate('/');
+    } catch {
+      setError('REGISTRATION FAILED');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -31,9 +46,58 @@ export function Invite() {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="————"
           className="input caret-signal border-0 border-b border-fog bg-transparent px-0 py-3 text-center font-mono text-lg uppercase tracking-[0.3em] focus:border-signal"
+          required
         />
-        <button type="submit" className="sr-only">
-          {t('action_submit')}
+
+        <label htmlFor="invite-email" className="sr-only">
+          {t('invite_email')}
+        </label>
+        <input
+          id="invite-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t('invite_email')}
+          className="input mt-4"
+          required
+        />
+
+        <label htmlFor="invite-nick" className="sr-only">
+          {t('invite_nick')}
+        </label>
+        <input
+          id="invite-nick"
+          type="text"
+          value={nick}
+          onChange={(e) => setNick(e.target.value)}
+          placeholder={t('invite_nick')}
+          className="input mt-2"
+          required
+        />
+
+        <label htmlFor="invite-password" className="sr-only">
+          {t('invite_password')}
+        </label>
+        <input
+          id="invite-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder={t('invite_password')}
+          className="input mt-2"
+          required
+        />
+
+        {error && (
+          <p className="label-mono mt-4 text-blood">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          className="btn btn-primary mt-4 w-full"
+          disabled={loading}
+        >
+          {t('action_register')}
         </button>
       </form>
 

@@ -7,6 +7,8 @@ import { rankingRouter } from './modules/ranking/router.js';
 import { battlesRouter } from './modules/battles/router.js';
 import { subscriptionsRouter } from './modules/subscriptions/router.js';
 import { cmsRouter } from './modules/cms/router.js';
+import { eventsRouter } from './modules/events/router.js';
+import { adminRouter } from './modules/admin/router.js';
 
 export const appRouter = router({
   auth: authRouter,
@@ -17,6 +19,8 @@ export const appRouter = router({
   battles: battlesRouter,
   subscriptions: subscriptionsRouter,
   cms: cmsRouter,
+  events: eventsRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

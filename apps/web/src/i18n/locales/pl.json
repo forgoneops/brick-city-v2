@@ -53,5 +53,11 @@
   "admin_flags": "FLAGI FUNKCJI",
   "admin_queue": "KOLEJKA AKCEPTACJI",
   "admin_approve": "Akceptuj",
-  "admin_approved": "ZATWIERDZONO"
+  "admin_approved": "ZATWIERDZONO",
+  "admin_stats": "STATISTYKI",
+  "admin_reports": "ZGLOSZENIA",
+  "admin_pins": "PINY",
+  "admin_events": "WYDARZENIA",
+  "admin_users": "UZYSKOWNICY",
+  "admin_resolved": "ROZWIĄZANE"
 }

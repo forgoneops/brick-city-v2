@@ -11,7 +11,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx src/seed.ts"
   },
   "dependencies": {
     "@bcv2/shared": "*",
@@ -24,6 +25,7 @@
     "hono": "^4.6.0",
     "jose": "^6.0.0",
     "mysql2": "^3.11.0",
+    "sharp": "^0.35.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {

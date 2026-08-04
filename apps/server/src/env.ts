@@ -5,6 +5,11 @@ const envSchema = z.object({
   DATABASE_URL: z.string().default(''),
   JWT_SECRET: z.string().default('dev-only-secret-change-me'),
   PORT: z.coerce.number().default(3001),
+  // Uploads storage: 'local' driver writes to UPLOADS_DIR served at /uploads.
+  // S3-compatible drivers can be added behind the same StorageDriver interface.
+  STORAGE_DRIVER: z.enum(['local']).default('local'),
+  UPLOADS_DIR: z.string().default('./uploads'),
+  MAX_UPLOAD_MB: z.coerce.number().default(15),
 });
 
 export const env = envSchema.parse(process.env);

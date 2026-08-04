@@ -53,5 +53,11 @@
   "admin_flags": "FEATURE-FLAGS",
   "admin_queue": "FREIGABE-WARTESCHLANGE",
   "admin_approve": "Freigeben",
-  "admin_approved": "FREIGEGEBEN"
+  "admin_approved": "FREIGEGEBEN",
+  "admin_stats": "STATISTIK",
+  "admin_reports": "MELDUNGEN",
+  "admin_pins": "ANZEIGEN",
+  "admin_events": "VERANSTALTUNGEN",
+  "admin_users": "BENUTZER",
+  "admin_resolved": "GELÖST"
 }

@@ -1,13 +1,109 @@
-import { ModulePage } from '../components/ModulePage.js';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { trpc } from '../lib/trpc.js';
 import { BlurredPin } from '../components/BlurredPin.js';
+import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
+import { useAuth } from '../lib/session.js';
 
-// Map — mystery layer: legendary spots stay blurred for non-members (spec §6).
+// Fix for default Leaflet marker icon in webpack/Vite environments.
+import L from 'leaflet';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const iconUrl = require('leaflet/dist/images/marker-icon.png');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const iconRetinaUrl = require('leaflet/dist/images/marker-icon-2x.png');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const shadowUrl = require('leaflet/dist/images/marker-shadow.png');
+// @ts-expect-error — Leaflet merges onto L.Icon.Default.prototype
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl });
+
+interface Pin {
+  id: string;
+  name: string;
+  city: string;
+  type: string;
+  membersOnly: boolean;
+  lat: number | null;
+  lng: number | null;
+  createdAt: string;
+}
+
 export function Map() {
   const { t } = useT();
+  const { user } = useAuth();
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    trpc.map.list.query().then((data) => {
+      setPins(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const member = user?.role === 'admin' || user?.role === 'moderator' ||
+    (user?.trialEndsAt && new Date(user.trialEndsAt) > new Date()) ||
+    (user?.walletBalanceCents && user.walletBalanceCents > 0);
+
   return (
-    <ModulePage title={t('nav_map')} icon="pin-folded" tag="MAP / WAW-044 / 52.2297N 21.0122E">
-      <BlurredPin hint="COORDS LOCKED" />
+    <ModulePage
+      title={t('nav_map')}
+      icon="pin-folded"
+      tag={`MAP / ${pins.length} PINS`}
+    >
+      {loading ? (
+        <p className="label-mono text-smoke">LOADING...</p>
+      ) : pins.length === 0 ? (
+        <BlurredPin hint="NO PINS YET" />
+      ) : (
+        <div className="h-[60vh] w-full border border-fog bg-asphalt">
+          <MapContainer
+            center={[52.2297, 21.0122]}
+            zoom={13}
+            className="h-full w-full"
+            scrollWheelZoom
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {pins.map((pin) => {
+              const isBlurred = pin.membersOnly && !member;
+              return (
+                <Marker
+                  key={pin.id}
+                  position={
+                    isBlurred
+                      ? [52.2297, 21.0122]
+                      : [pin.lat ?? 52.2297, pin.lng ?? 21.0122]
+                  }
+                  opacity={isBlurred ? 0.4 : 1}
+                >
+                  <Popup>
+                    {isBlurred ? (
+                      <span className="label-mono text-signal">
+                        MEMBERS ONLY
+                      </span>
+                    ) : (
+                      <>
+                        <strong className="font-display text-bone">
+                          {pin.name}
+                        </strong>
+                        <br />
+                        <span className="label-mono text-smoke">
+                          {pin.city} / {pin.type}
+                        </span>
+                      </>
+                    )}
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
+        </div>
+      )}
     </ModulePage>
   );
 }
