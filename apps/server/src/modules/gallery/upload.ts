@@ -8,6 +8,7 @@ import { photos, siteContent } from '../../db/schema.js';
 import { env } from '../../env.js';
 import { verifySessionToken } from '../../lib/jwt.js';
 import { getStorage, newUploadKey } from '../../lib/storage.js';
+import { recalculateUserScore } from '../ranking/scoring.js';
 
 const MAX_EDGE = 1600;
 const THUMB_EDGE = 480;
@@ -90,6 +91,10 @@ export async function handleUpload(c: Context) {
     thumbUrl: storage.url(thumbKey),
     status: 'live',
   });
+
+  if (session?.sub) {
+    await recalculateUserScore(session.sub);
+  }
 
   return c.json(
     {

@@ -6,6 +6,7 @@ import { GALLERY_CATEGORIES } from '@bcv2/shared';
 import { publicProcedure, protectedProcedure, router } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
 import { comments, galleryCategoryValues, photos, props, users } from '../../db/schema.js';
+import { recalculateUserScore } from '../ranking/scoring.js';
 
 const PAGE_SIZE = 12;
 
@@ -133,9 +134,9 @@ export const galleryRouter = router({
       .input(z.object({ photoId: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
         const db = getDb();
-        return await db.transaction(async (tx) => {
+        const result = await db.transaction(async (tx) => {
           const [photo] = await tx
-            .select({ id: photos.id, status: photos.status })
+            .select({ id: photos.id, status: photos.status, authorId: photos.authorId })
             .from(photos)
             .where(eq(photos.id, input.photoId))
             .for('update');
@@ -173,8 +174,13 @@ export const galleryRouter = router({
             .select({ propsCount: photos.propsCount })
             .from(photos)
             .where(eq(photos.id, input.photoId));
-          return { active, propsCount: updated.propsCount };
+          return { active, propsCount: updated.propsCount, authorId: photo.authorId };
         });
+
+        if (result.authorId) {
+          await recalculateUserScore(result.authorId);
+        }
+        return { active: result.active, propsCount: result.propsCount };
       }),
   }),
 });

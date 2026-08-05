@@ -2,9 +2,10 @@ import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { publicProcedure, protectedProcedure, router, type Context } from '../../trpc.js';
+import { protectedProcedure, publicProcedure, router, type Context } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
-import { pins, pinTypeValues, users } from '../../db/schema.js';
+import { checkIns, pins, pinTypeValues, users } from '../../db/schema.js';
+import { recalculateUserScore } from '../ranking/scoring.js';
 
 // Members see exact coordinates of members-only pins; everyone else gets
 // them nulled so the web renders the BlurredPin mystery layer.
@@ -63,7 +64,8 @@ export const mapRouter = router({
       return { id, status: 'pending' as const };
     }),
 
-  // Stub for Phase 3+: geo check-in at a spot.
+  // Geo check-in at a spot — one credited check-in per user per pin
+  // (dedupe rationale: docs/DECISIONS.md). Feeds ranking's activity weight.
   checkIn: protectedProcedure
     .input(z.object({ pinId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
@@ -75,7 +77,17 @@ export const mapRouter = router({
       if (!pin) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Pin not found' });
       }
-      // TODO(phase-3): persist check-ins and rate-limit per user/spot.
-      return { pinId: input.pinId, userId: ctx.user.id, status: 'stubbed' as const };
+
+      const existing = await db
+        .select({ id: checkIns.id })
+        .from(checkIns)
+        .where(and(eq(checkIns.pinId, input.pinId), eq(checkIns.userId, ctx.user.id)));
+
+      if (existing.length === 0) {
+        await db.insert(checkIns).values({ id: randomUUID(), pinId: input.pinId, userId: ctx.user.id });
+        await recalculateUserScore(ctx.user.id);
+      }
+
+      return { pinId: input.pinId, userId: ctx.user.id, status: 'checked-in' as const };
     }),
 });

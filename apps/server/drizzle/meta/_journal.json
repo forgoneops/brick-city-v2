@@ -8,6 +8,13 @@
       "when": 1785791836690,
       "tag": "0000_aspiring_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1785964170487,
+      "tag": "0001_groovy_warpath",
+      "breakpoints": true
     }
   ]
 }

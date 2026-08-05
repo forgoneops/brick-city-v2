@@ -13,6 +13,7 @@ import {
   users,
 } from '../../db/schema.js';
 import { ROLES } from '@bcv2/shared';
+import { closeActiveSeasonAndOpenNext, runNightlyRecalc } from '../ranking/scoring.js';
 
 export const adminRouter = router({
   // Dashboard counters.
@@ -216,6 +217,23 @@ export const adminRouter = router({
         }
         await db.update(users).set({ role: input.role }).where(eq(users.id, input.id));
         return { id: input.id, role: input.role };
+      }),
+  }),
+
+  ranking: router({
+    // Nightly-job stub, callable on demand for ops/testing (docs/DECISIONS.md).
+    recalculateAll: adminProcedure.mutation(async () => {
+      const count = await runNightlyRecalc();
+      return { recalculated: count };
+    }),
+
+    // Deactivates the current season (its points stay frozen, all-time keeps
+    // accumulating regardless) and opens a new one starting now.
+    closeSeason: adminProcedure
+      .input(z.object({ nextName: z.string().min(1).max(128) }))
+      .mutation(async ({ input }) => {
+        const season = await closeActiveSeasonAndOpenNext(input.nextName);
+        return { id: season.id, name: season.name, startsAt: season.startsAt.toISOString() };
       }),
   }),
 

@@ -61,13 +61,26 @@ export const siteContent = mysqlTable('site_content', {
   updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
 });
 
+// Declared early (ahead of walletTransactions below) since mysqlEnum() reads
+// these arrays at module-evaluation time, not just for typing.
+export const walletTransactionTypeValues = ['topup', 'subscription', 'spend', 'refund'] as const;
+export const walletTransactionStatusValues = ['pending', 'completed', 'failed'] as const;
+export const paymentProviderIdValues = ['stripe', 'przelewy24', 'paypal'] as const;
+
+// Phase 3c: extended with type/provider/providerRef/status so the ledger can
+// represent a full topup -> checkout -> webhook -> credit lifecycle.
+// amountCents stays signed (negative = debit) so SUM() gives balance deltas.
 export const walletTransactions = mysqlTable('wallet_transactions', {
   id: varchar('id', { length: 36 }).primaryKey(),
   userId: varchar('user_id', { length: 36 })
     .notNull()
     .references(() => users.id),
   amountCents: int('amount_cents').notNull(),
+  type: mysqlEnum('type', walletTransactionTypeValues).notNull().default('topup'),
   reason: varchar('reason', { length: 128 }).notNull(),
+  provider: mysqlEnum('provider', paymentProviderIdValues),
+  providerRef: varchar('provider_ref', { length: 128 }),
+  status: mysqlEnum('status', walletTransactionStatusValues).notNull().default('completed'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -179,6 +192,171 @@ export const comments = mysqlTable('comments', {
 export const galleryCategoryValues = GALLERY_CATEGORIES as unknown as [string, ...string[]];
 export const forumCategoryValues = FORUM_CATEGORIES as unknown as [string, ...string[]];
 
+// ---------------------------------------------------------------------------
+// Phase 3a — ranking
+// ---------------------------------------------------------------------------
+
+export const rankingScopeValues = ['global', 'city', 'category'] as const;
+
+// Sentinel used in place of a real seasons.id for the running all-time
+// bucket. Kept as a non-null string (not NULL) because MySQL unique indexes
+// treat every NULL as distinct, which would let duplicate all-time rows slip
+// through the uniqueness guard below.
+export const ALLTIME_SEASON_ID = 'alltime';
+
+export const seasons = mysqlTable('seasons', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  name: varchar('name', { length: 128 }).notNull(),
+  startsAt: timestamp('starts_at').notNull().defaultNow(),
+  endsAt: timestamp('ends_at'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const rankingScores = mysqlTable(
+  'ranking_scores',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    userId: varchar('user_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    scope: mysqlEnum('scope', rankingScopeValues).notNull(),
+    scopeKey: varchar('scope_key', { length: 128 }).notNull().default(''),
+    // Either a real seasons.id, or ALLTIME_SEASON_ID for the unbounded bucket.
+    seasonId: varchar('season_id', { length: 36 }).notNull(),
+    points: int('points').notNull().default(0),
+    updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    uniqueIndex('ranking_scores_unique').on(
+      table.userId,
+      table.scope,
+      table.scopeKey,
+      table.seasonId
+    ),
+  ]
+);
+
+// Minimal schema so the ranking scoring service has a real points source to
+// read from, even though the battles module itself stays hidden
+// (FEATURES.battles = false). No UI writes to this table yet.
+export const battleVotes = mysqlTable(
+  'battle_votes',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    battleId: varchar('battle_id', { length: 36 }).notNull(),
+    submissionUserId: varchar('submission_user_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    voterId: varchar('voter_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('battle_votes_unique').on(table.battleId, table.voterId)]
+);
+
+// One credited check-in per user per pin (simple v1 dedupe — not per-day).
+export const checkIns = mysqlTable(
+  'check_ins',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    pinId: varchar('pin_id', { length: 36 })
+      .notNull()
+      .references(() => pins.id),
+    userId: varchar('user_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('check_ins_unique').on(table.pinId, table.userId)]
+);
+
+// ---------------------------------------------------------------------------
+// Phase 3b — forum
+// ---------------------------------------------------------------------------
+
+export const forumCategories = mysqlTable('forum_categories', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  slug: varchar('slug', { length: 64 }).notNull().unique(),
+  name: varchar('name', { length: 128 }).notNull(),
+  order: int('order').notNull().default(0),
+});
+
+export const forumThreads = mysqlTable('forum_threads', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  categoryId: varchar('category_id', { length: 36 })
+    .notNull()
+    .references(() => forumCategories.id),
+  authorId: varchar('author_id', { length: 36 })
+    .notNull()
+    .references(() => users.id),
+  title: varchar('title', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  lastActivityAt: timestamp('last_activity_at').notNull().defaultNow(),
+  isPinned: boolean('is_pinned').notNull().default(false),
+  isLocked: boolean('is_locked').notNull().default(false),
+});
+
+export const forumReplies = mysqlTable('forum_replies', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  threadId: varchar('thread_id', { length: 36 })
+    .notNull()
+    .references(() => forumThreads.id),
+  authorId: varchar('author_id', { length: 36 })
+    .notNull()
+    .references(() => users.id),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  propsCount: int('props_count').notNull().default(0),
+});
+
+export const forumProps = mysqlTable(
+  'forum_props',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    replyId: varchar('reply_id', { length: 36 })
+      .notNull()
+      .references(() => forumReplies.id),
+    userId: varchar('user_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('forum_props_unique').on(table.replyId, table.userId)]
+);
+
+// ---------------------------------------------------------------------------
+// Phase 3c — subscriptions + wallet
+// ---------------------------------------------------------------------------
+
+export const subscriptionStatusValues = ['trialing', 'active', 'expired', 'canceled'] as const;
+
+export const subscriptions = mysqlTable('subscriptions', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 })
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  status: mysqlEnum('status', subscriptionStatusValues).notNull().default('trialing'),
+  trialEndsAt: timestamp('trial_ends_at'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  priceCents: int('price_cents').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+});
+
+// paymentProviders is a config KV row per provider — enabled flag only.
+// Real API keys are never stored here or anywhere in the repo; they come
+// from env vars on the deploy target (see .env.example) and are only
+// referenced here as a placeholder label for the admin UI.
+export const paymentProviders = mysqlTable('payment_providers', {
+  id: mysqlEnum('id', paymentProviderIdValues).primaryKey(),
+  enabled: boolean('enabled').notNull().default(false),
+  keyPlaceholder: varchar('key_placeholder', { length: 255 }).notNull().default('NOT CONFIGURED'),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Invite = typeof invites.$inferSelect;
@@ -189,3 +367,8 @@ export type Post = typeof posts.$inferSelect;
 export type PortalEvent = typeof events.$inferSelect;
 export type Report = typeof reports.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
+export type Season = typeof seasons.$inferSelect;
+export type RankingScore = typeof rankingScores.$inferSelect;
+export type ForumThread = typeof forumThreads.$inferSelect;
+export type ForumReply = typeof forumReplies.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
