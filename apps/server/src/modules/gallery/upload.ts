@@ -87,6 +87,8 @@ export async function handleUpload(c: Context) {
 
   const id = randomUUID();
   const db = getDb();
+  // createdAt set explicitly — see the comment on checkIns' insert in
+  // map/router.ts for why MySQL's defaultNow() isn't good enough here.
   await db.insert(photos).values({
     id,
     authorId: session?.sub ?? null,
@@ -96,6 +98,7 @@ export async function handleUpload(c: Context) {
     imageUrl: storage.url(key),
     thumbUrl: storage.url(thumbKey),
     status: 'live',
+    createdAt: new Date(),
   });
 
   if (session?.sub) {

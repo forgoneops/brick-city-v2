@@ -162,6 +162,7 @@ export const galleryRouter = router({
               id: randomUUID(),
               photoId: input.photoId,
               userId: ctx.user.id,
+              createdAt: new Date(),
             });
             await tx
               .update(photos)

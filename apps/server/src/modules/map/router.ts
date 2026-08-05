@@ -85,7 +85,11 @@ export const mapRouter = router({
         .where(and(eq(checkIns.pinId, input.pinId), eq(checkIns.userId, ctx.user.id)));
 
       if (existing.length === 0) {
-        await db.insert(checkIns).values({ id: randomUUID(), pinId: input.pinId, userId: ctx.user.id });
+        // createdAt set explicitly (not defaultNow()) — MySQL's bare NOW()
+        // used in a DEFAULT expression truncates to whole seconds regardless
+        // of the column's fsp, which broke season-boundary comparisons in
+        // scoring.ts. See the comment on schema.ts's seasons.startsAt.
+        await db.insert(checkIns).values({ id: randomUUID(), pinId: input.pinId, userId: ctx.user.id, createdAt: new Date() });
         await recalculateUserScore(ctx.user.id);
       }
 

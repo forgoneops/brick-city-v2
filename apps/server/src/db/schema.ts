@@ -106,7 +106,8 @@ export const photos = mysqlTable('photos', {
   thumbUrl: varchar('thumb_url', { length: 512 }).notNull(),
   propsCount: int('props_count').notNull().default(0),
   status: mysqlEnum('status', photoStatusValues).notNull().default('live'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
+  // fsp: 3 — see the comment on seasons.startsAt for why this matters.
+  createdAt: timestamp('created_at', { fsp: 3 }).notNull().defaultNow(),
 });
 
 export const props = mysqlTable(
@@ -119,7 +120,7 @@ export const props = mysqlTable(
     userId: varchar('user_id', { length: 36 })
       .notNull()
       .references(() => users.id),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { fsp: 3 }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex('props_photo_user_unique').on(table.photoId, table.userId)]
 );
@@ -207,8 +208,15 @@ export const ALLTIME_SEASON_ID = 'alltime';
 export const seasons = mysqlTable('seasons', {
   id: varchar('id', { length: 36 }).primaryKey(),
   name: varchar('name', { length: 128 }).notNull(),
-  startsAt: timestamp('starts_at').notNull().defaultNow(),
-  endsAt: timestamp('ends_at'),
+  // fsp: 3 (millisecond precision) on startsAt/endsAt, and on every
+  // createdAt column compared against them in scoring.ts's computeUserPoints
+  // (checkIns/battleVotes/photos below) — without it, a JS `new Date()`
+  // value serialized by mysql2 can round to a different whole second than
+  // MySQL's own CURRENT_TIMESTAMP-backed defaultNow(), which let an event
+  // genuinely after season-close land before the stored startsAt. See the
+  // Ranking section of docs/DECISIONS.md.
+  startsAt: timestamp('starts_at', { fsp: 3 }).notNull().defaultNow(),
+  endsAt: timestamp('ends_at', { fsp: 3 }),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -251,7 +259,7 @@ export const battleVotes = mysqlTable(
     voterId: varchar('voter_id', { length: 36 })
       .notNull()
       .references(() => users.id),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { fsp: 3 }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex('battle_votes_unique').on(table.battleId, table.voterId)]
 );
@@ -267,7 +275,7 @@ export const checkIns = mysqlTable(
     userId: varchar('user_id', { length: 36 })
       .notNull()
       .references(() => users.id),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { fsp: 3 }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex('check_ins_unique').on(table.pinId, table.userId)]
 );
