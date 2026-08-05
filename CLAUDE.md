@@ -1,0 +1,50 @@
+# BRICK CITY MASHIN' v2 — repo guidance for Claude Code
+
+## Identity
+- Full-stack community portal for graffiti writers / street art fans.
+- Monorepo: `apps/web` (React + TS + Tailwind + Vite + i18n en/pl/de + PWA),
+  `apps/server` (Hono + tRPC + Drizzle + MySQL), `packages/shared`.
+- Only repo for this work: `github.com/forgoneops/brick-city-v2`, branch `main`.
+  Legacy `brick-city-mashin` is a read-only archive — never touch it.
+
+## Design system
+- Binding spec: `docs/bcm-design-system.md` ("SIDE ALLEY"). No deviations without
+  updating the doc first.
+- No emojis in UI or code (docs may use a symbol in a callout, e.g. content warnings).
+- No new colors outside the Wet Asphalt token set (`--ink`, `--bone`, `--signal`, etc).
+- ≤2px border radius, 1px hairline borders, mono micro-labels ("GALLERY", `WAW-044` style).
+- The `.bridge-gap` motif and CUTOUTS icon sprite are the recognizable brand marks — reuse
+  them, don't invent parallel motifs.
+
+## Product rules
+- `FEATURES.battles` (`apps/web/src/config/features.ts`) stays `false`. The module is fully
+  implemented server + client side but hidden from the UI — flip only on explicit instruction.
+- Registration is invite-only. New accounts get a 7-day full-access trial
+  (`TRIAL_DAYS` in the auth module), then the paywall applies (~25 PLN/month, toggle-able
+  from admin).
+- Admin seed placeholder: `admin@brickcity.local` / `brickcity123` (dev/seed only, never
+  reuse in production config).
+
+## Working rules
+- MODIFY, DON'T REGENERATE. Edit existing files in place; never scaffold over working code.
+  If a file is genuinely half-finished, rewrite it wholesale rather than patching around
+  guesswork — but don't do that to working code just to restyle it.
+- English for all code, comments, commits, and docs.
+- Workflow is stage-gated per `docs/plan.md`: each phase ends with verification (tsc clean
+  in every workspace, `npm run build` clean, E2E smoke where applicable) → commit → push to
+  `origin/main` → report API surface and verification output.
+- Compact context only at safe checkpoints (after a green verify + commit), and persist any
+  decisions worth keeping into `docs/` or inline TODOs first.
+- Local dev DB: `docker-compose.yml` under `apps/server` (mysql:8, root/brickcity). Migrate
+  with `npm run db:migrate -w @bcv2/server`, seed with `npm run db:seed -w @bcv2/server`.
+
+## Current phase state (update this section as phases land)
+- Phase 0 — monorepo skeleton, JWT auth + roles, invite register, wallet stub, paywall flag,
+  8 module stubs, i18n, PWA: **done**.
+- Phase 1 — SIDE ALLEY design system (tokens, bridge-gap, icons, signature components,
+  mystery layer, 404): **done**.
+- Phase 2 — core portal on the backend (DB schema/migrations, gallery upload pipeline,
+  props, map pins with moderation queue, zine + events publish flow, admin wired to DB,
+  reports queue): **done**, frontend wired to the real tRPC API on top of it.
+- Phase 3 (ranking ∥ forum ∥ subscriptions+wallet), Phase 4 (full CMS), Phase 5
+  (hardening + deploy): not started — see `docs/plan.md` for scope.
