@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { trpc } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { Stamp } from '../components/Stamp.js';
@@ -55,6 +55,15 @@ interface User {
   createdAt: string;
 }
 
+interface ModThread {
+  id: string;
+  title: string;
+  authorNick: string;
+  isPinned: boolean;
+  isLocked: boolean;
+  replyCount: number;
+}
+
 export function Admin() {
   const { t } = useT();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -62,6 +71,7 @@ export function Admin() {
   const [pendingPins, setPendingPins] = useState<PendingPin[]>([]);
   const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [threads, setThreads] = useState<ModThread[]>([]);
   const [stampedRows, setStampedRows] = useState<string[]>([]);
 
   const flagRows = (Object.keys(FEATURES) as FeatureName[]).map((name) => ({
@@ -75,7 +85,12 @@ export function Admin() {
     trpc.admin.pins.queue.query().then(setPendingPins);
     trpc.admin.events.queue.query().then(setPendingEvents);
     trpc.admin.users.list.query().then(setUsers);
+    trpc.forum.threads.query().then((res) => setThreads(res.items));
   }
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   function handleReportAction(id: string, action: 'delete' | 'warn' | 'dismiss') {
     trpc.admin.reports.resolve.mutate({ id, action }).then(() => {
@@ -114,6 +129,21 @@ export function Admin() {
 
   function handleRoleChange(id: string, role: string) {
     trpc.admin.users.setRole.mutate({ id, role: role as 'user' | 'moderator' | 'admin' });
+  }
+
+  function handleThreadPin(id: string, pinned: boolean) {
+    trpc.forum.moderation.setPinned.mutate({ id, pinned }).then(refresh);
+  }
+
+  function handleThreadLock(id: string, locked: boolean) {
+    trpc.forum.moderation.setLocked.mutate({ id, locked }).then(refresh);
+  }
+
+  function handleThreadDelete(id: string) {
+    trpc.forum.moderation.delete.mutate({ id }).then(() => {
+      setStampedRows((prev) => [...prev, id]);
+      refresh();
+    });
   }
 
   return (
@@ -282,6 +312,43 @@ export function Admin() {
                           onClick={() => handleEventReject(evt.id)}
                         >
                           REJECT
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Forum moderation */}
+        <section>
+          <h2 className="label-mono mb-3">{t('admin_forum_mod')}</h2>
+          {threads.length === 0 ? (
+            <p className="label-mono text-smoke">NOTHING HERE. YET.</p>
+          ) : (
+            <ul className="divide-y divide-fog border border-fog">
+              {threads.map((th) => (
+                <li key={th.id} className="relative flex items-center justify-between gap-3 px-3 py-3">
+                  <span className="label-mono text-bone">
+                    {th.title} / {th.authorNick} / {th.replyCount} REPLIES
+                    {th.isPinned && <span className="text-signal ml-2">{t('forum_pinned')}</span>}
+                    {th.isLocked && <span className="text-blood ml-2">{t('forum_locked')}</span>}
+                  </span>
+                  <div className="flex gap-2">
+                    {stampedRows.includes(th.id) ? (
+                      <Stamp label={t('forum_delete').toUpperCase()} />
+                    ) : (
+                      <>
+                        <button className="btn" onClick={() => handleThreadPin(th.id, !th.isPinned)}>
+                          {th.isPinned ? t('forum_unpin') : t('forum_pin')}
+                        </button>
+                        <button className="btn" onClick={() => handleThreadLock(th.id, !th.isLocked)}>
+                          {th.isLocked ? t('forum_unlock') : t('forum_lock')}
+                        </button>
+                        <button className="btn" onClick={() => handleThreadDelete(th.id)}>
+                          {t('forum_delete')}
                         </button>
                       </>
                     )}

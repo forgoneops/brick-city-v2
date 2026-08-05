@@ -57,6 +57,7 @@ export const roleGuard = (...allowed: Role[]) => {
 };
 
 export const adminProcedure = protectedProcedure.use(roleGuard('admin'));
+export const moderatorProcedure = protectedProcedure.use(roleGuard('admin', 'moderator'));
 
 /**
  * Phase 0 stub: verifies the current user still has active access under the

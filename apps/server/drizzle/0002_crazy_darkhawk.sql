@@ -1,0 +1,1 @@
+ALTER TABLE `forum_threads` ADD `deleted_at` timestamp;

@@ -296,6 +296,9 @@ export const forumThreads = mysqlTable('forum_threads', {
   lastActivityAt: timestamp('last_activity_at').notNull().defaultNow(),
   isPinned: boolean('is_pinned').notNull().default(false),
   isLocked: boolean('is_locked').notNull().default(false),
+  // Soft-delete, matching the status-based moderation convention used by
+  // photos/pins/events elsewhere in this schema (no hard deletes).
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const forumReplies = mysqlTable('forum_replies', {
