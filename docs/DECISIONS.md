@@ -41,6 +41,14 @@ just disappearing into the diff.
   exists and is reachable via `admin.ranking.recalculateAll` for ops/manual
   runs and E2E verification; actually scheduling it is Phase 5 (hardening +
   deploy) territory per `docs/plan.md`.
+- **Timestamp precision bug found and fixed during E2E verification**: season
+  close + an immediate same-second event could silently drop that event from
+  the new season. `seasons.startsAt`/`endsAt` and every `createdAt` column
+  scoring compares against now use `timestamp(fsp: 3)`, and the app sets
+  `createdAt` explicitly at every scoring-relevant insert instead of relying
+  on MySQL's `defaultNow()` — its bare `NOW()` truncates to whole seconds
+  regardless of the column's declared precision. Full root-cause writeup is
+  in the fix commit message.
 
 ## Schema / migrations
 
