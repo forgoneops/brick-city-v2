@@ -6,11 +6,15 @@ import { adminProcedure, protectedProcedure, router } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
 import {
   events,
+  paymentProviderIdValues,
+  paymentProviders,
   photos,
   pins,
   reports,
   reportTargetTypeValues,
+  subscriptions,
   users,
+  walletTransactions,
 } from '../../db/schema.js';
 import { ROLES } from '@bcv2/shared';
 import { closeActiveSeasonAndOpenNext, runNightlyRecalc } from '../ranking/scoring.js';
@@ -234,6 +238,92 @@ export const adminRouter = router({
       .mutation(async ({ input }) => {
         const season = await closeActiveSeasonAndOpenNext(input.nextName);
         return { id: season.id, name: season.name, startsAt: season.startsAt.toISOString() };
+      }),
+  }),
+
+  subscriptions: router({
+    // invites sent, active trials, paying users, wallet volume, MRR.
+    stats: adminProcedure.query(async () => {
+      const db = getDb();
+      const [invitesSent] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
+      const [trialing] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(subscriptions)
+        .where(eq(subscriptions.status, 'trialing'));
+      const [active] = await db
+        .select({ count: sql<number>`COUNT(*)`, mrrCents: sql<number>`COALESCE(SUM(${subscriptions.priceCents}), 0)` })
+        .from(subscriptions)
+        .where(eq(subscriptions.status, 'active'));
+      const [walletVolume] = await db
+        .select({ cents: sql<number>`COALESCE(SUM(${walletTransactions.amountCents}), 0)` })
+        .from(walletTransactions)
+        .where(eq(walletTransactions.type, 'topup'));
+
+      return {
+        activeTrials: Number(trialing.count),
+        payingUsers: Number(active.count),
+        walletVolumeCents: Number(walletVolume.cents),
+        mrrCents: Number(active.mrrCents),
+        invitesSent: Number(invitesSent.count),
+      };
+    }),
+  }),
+
+  wallet: router({
+    transactions: adminProcedure
+      .input(
+        z
+          .object({ cursor: z.string().datetime().optional(), limit: z.number().int().min(1).max(50).optional() })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        const db = getDb();
+        const limit = input?.limit ?? 20;
+        const conditions = input?.cursor
+          ? [sql`${walletTransactions.createdAt} < ${new Date(input.cursor)}`]
+          : [];
+
+        const rows = await db
+          .select({
+            id: walletTransactions.id,
+            userId: walletTransactions.userId,
+            nick: users.nick,
+            amountCents: walletTransactions.amountCents,
+            type: walletTransactions.type,
+            provider: walletTransactions.provider,
+            status: walletTransactions.status,
+            createdAt: walletTransactions.createdAt,
+          })
+          .from(walletTransactions)
+          .innerJoin(users, eq(walletTransactions.userId, users.id))
+          .where(conditions.length ? conditions[0] : undefined)
+          .orderBy(desc(walletTransactions.createdAt))
+          .limit(limit + 1);
+
+        const page = rows.slice(0, limit);
+        const last = page[page.length - 1];
+        return {
+          items: page.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
+          nextCursor: rows.length > limit && last ? last.createdAt.toISOString() : null,
+        };
+      }),
+  }),
+
+  providers: router({
+    list: adminProcedure.query(async () => {
+      const db = getDb();
+      return db.select().from(paymentProviders);
+    }),
+
+    setEnabled: adminProcedure
+      .input(z.object({ id: z.enum(paymentProviderIdValues), enabled: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const db = getDb();
+        await db
+          .insert(paymentProviders)
+          .values({ id: input.id, enabled: input.enabled })
+          .onDuplicateKeyUpdate({ set: { enabled: input.enabled } });
+        return { id: input.id, enabled: input.enabled };
       }),
   }),
 

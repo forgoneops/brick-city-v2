@@ -102,3 +102,21 @@ just disappearing into the diff.
 - **Paywall config now persists to `site_content`** (`paywall_enabled`,
   `paywall_price_cents` keys), replacing the old compile-time-default stub in
   `subscriptions.getPaywallConfig`/`setPaywallConfig`.
+- **Staff bypass added to `evaluateAccess`**: admin/moderator accounts always
+  pass, ahead of the trial/subscription/auto-debit checks. Not explicitly
+  requested, but without it the seeded admin (and any real moderator) would
+  get paywall-blocked out of the portal they're supposed to moderate.
+- **Only three endpoints are actually gated this phase**: `map.submit`,
+  `forum.createThread`, `forum.reply` (via a new `activeAccessProcedure` in
+  `trpc.ts`), plus the raw `POST /upload` route (via a manual `evaluateAccess`
+  call, since it's a Hono handler, not a tRPC procedure). Everything else —
+  browsing gallery/map/forum, gallery props — stays open regardless of
+  paywall state. `gallery.upload` currently has no frontend call site at all
+  (Gallery.tsx only browses + props; there's no upload form), so that gate is
+  real but unexercised by the UI today — documented as a 402 contract for
+  whenever an upload UI gets built.
+- **Auto-debit price is read live at debit time**, not the `priceCents`
+  frozen on the `subscriptions` row at registration, and gets written back
+  onto the row after a successful debit. If admin changes the price mid-cycle,
+  already-active subscribers keep their current period at the old price —
+  no retroactive re-charge, only the next debit picks up the new price.

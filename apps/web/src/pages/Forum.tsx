@@ -5,6 +5,7 @@ import { ModulePage } from '../components/ModulePage.js';
 import { EmptyState } from '../components/EmptyState.js';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
+import { isPaywallError, setPaywallBlocked } from '../lib/paywall.js';
 
 interface Category {
   id: string;
@@ -122,15 +123,25 @@ export function Forum() {
         setNewBody('');
         setShowNewThread(false);
         goThread(res.id);
+      })
+      .catch((err) => {
+        if (isPaywallError(err)) setPaywallBlocked(true);
+        else throw err;
       });
   }
 
   function handleReply() {
     if (!threadId || !replyBody.trim()) return;
-    trpc.forum.reply.mutate({ threadId, body: replyBody.trim() }).then(() => {
-      setReplyBody('');
-      refreshThread();
-    });
+    trpc.forum.reply
+      .mutate({ threadId, body: replyBody.trim() })
+      .then(() => {
+        setReplyBody('');
+        refreshThread();
+      })
+      .catch((err) => {
+        if (isPaywallError(err)) setPaywallBlocked(true);
+        else throw err;
+      });
   }
 
   function handleReplyProps(replyId: string) {

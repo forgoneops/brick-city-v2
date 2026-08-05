@@ -64,6 +64,30 @@ interface ModThread {
   replyCount: number;
 }
 
+interface SubStats {
+  activeTrials: number;
+  payingUsers: number;
+  walletVolumeCents: number;
+  mrrCents: number;
+  invitesSent: number;
+}
+
+interface WalletTx {
+  id: string;
+  nick: string;
+  amountCents: number;
+  type: string;
+  provider: string | null;
+  status: string;
+  createdAt: string;
+}
+
+interface Provider {
+  id: string;
+  enabled: boolean;
+  keyPlaceholder: string;
+}
+
 export function Admin() {
   const { t } = useT();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -72,6 +96,9 @@ export function Admin() {
   const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [threads, setThreads] = useState<ModThread[]>([]);
+  const [subStats, setSubStats] = useState<SubStats | null>(null);
+  const [walletTxs, setWalletTxs] = useState<WalletTx[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [stampedRows, setStampedRows] = useState<string[]>([]);
 
   const flagRows = (Object.keys(FEATURES) as FeatureName[]).map((name) => ({
@@ -86,6 +113,9 @@ export function Admin() {
     trpc.admin.events.queue.query().then(setPendingEvents);
     trpc.admin.users.list.query().then(setUsers);
     trpc.forum.threads.query().then((res) => setThreads(res.items));
+    trpc.admin.subscriptions.stats.query().then(setSubStats);
+    trpc.admin.wallet.transactions.query().then((res) => setWalletTxs(res.items));
+    trpc.admin.providers.list.query().then(setProviders);
   }
 
   useEffect(() => {
@@ -144,6 +174,10 @@ export function Admin() {
       setStampedRows((prev) => [...prev, id]);
       refresh();
     });
+  }
+
+  function handleProviderToggle(id: string, enabled: boolean) {
+    trpc.admin.providers.setEnabled.mutate({ id: id as 'stripe' | 'przelewy24' | 'paypal', enabled }).then(refresh);
   }
 
   return (
@@ -382,6 +416,73 @@ export function Admin() {
                     <option value="moderator">MODERATOR</option>
                     <option value="admin">ADMIN</option>
                   </select>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Subscriptions dashboard */}
+        <section>
+          <h2 className="label-mono mb-3">{t('admin_subscriptions')}</h2>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <div className="border border-fog bg-concrete px-3 py-2">
+              <span className="label-mono block text-smoke">ACTIVE TRIALS</span>
+              <span className="font-display text-2xl text-bone">{subStats?.activeTrials ?? 0}</span>
+            </div>
+            <div className="border border-fog bg-concrete px-3 py-2">
+              <span className="label-mono block text-smoke">PAYING USERS</span>
+              <span className="font-display text-2xl text-signal">{subStats?.payingUsers ?? 0}</span>
+            </div>
+            <div className="border border-fog bg-concrete px-3 py-2">
+              <span className="label-mono block text-smoke">WALLET VOLUME</span>
+              <span className="font-display text-2xl text-bone">
+                {((subStats?.walletVolumeCents ?? 0) / 100).toFixed(0)} PLN
+              </span>
+            </div>
+            <div className="border border-fog bg-concrete px-3 py-2">
+              <span className="label-mono block text-smoke">MRR</span>
+              <span className="font-display text-2xl text-signal">
+                {((subStats?.mrrCents ?? 0) / 100).toFixed(0)} PLN
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Payment providers */}
+        <section>
+          <h2 className="label-mono mb-3">{t('admin_providers')}</h2>
+          <ul className="divide-y divide-fog border border-fog">
+            {providers.map((p) => (
+              <li key={p.id} className="label-mono flex items-center justify-between px-3 py-2">
+                <span className="text-bone">{p.id.toUpperCase()}</span>
+                <button
+                  className={`border px-3 py-1 ${p.enabled ? 'border-signal text-signal' : 'border-fog text-smoke'}`}
+                  onClick={() => handleProviderToggle(p.id, !p.enabled)}
+                >
+                  {p.enabled ? 'ENABLED' : 'DISABLED'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Wallet transactions */}
+        <section>
+          <h2 className="label-mono mb-3">{t('admin_transactions')}</h2>
+          {walletTxs.length === 0 ? (
+            <p className="label-mono text-smoke">NOTHING HERE. YET.</p>
+          ) : (
+            <ul className="divide-y divide-fog border border-fog">
+              {walletTxs.map((tx) => (
+                <li key={tx.id} className="label-mono flex items-center justify-between px-3 py-2">
+                  <span className="text-bone">
+                    {tx.nick} / {tx.type.toUpperCase()} {tx.provider ? `/ ${tx.provider.toUpperCase()}` : ''}
+                  </span>
+                  <span className={tx.amountCents >= 0 ? 'text-signal' : 'text-blood'}>
+                    {tx.amountCents >= 0 ? '+' : ''}
+                    {(tx.amountCents / 100).toFixed(2)} PLN
+                  </span>
                 </li>
               ))}
             </ul>

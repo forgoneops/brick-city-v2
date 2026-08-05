@@ -7,6 +7,7 @@ import { appRouter } from './router.js';
 import { createContext } from './trpc.js';
 import { env } from './env.js';
 import { handleUpload } from './modules/gallery/upload.js';
+import { handleWebhook } from './modules/subscriptions/webhook.js';
 
 const app = new Hono();
 
@@ -27,6 +28,10 @@ app.use(
 
 // Multipart image upload -> sharp webp + thumb -> photos row.
 app.post('/upload', handleUpload);
+
+// Payment provider webhook (real-provider path; the mock topUp flow credits
+// synchronously and doesn't hit this route — see subscriptions/webhook.ts).
+app.post('/webhooks/:provider', handleWebhook);
 
 app.use(
   '/trpc/*',

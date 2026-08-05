@@ -1,16 +1,14 @@
 import { z } from 'zod';
-import { eq, sql } from 'drizzle-orm';
+import { and, desc, eq, lt } from 'drizzle-orm';
 import { router, publicProcedure, protectedProcedure, adminProcedure } from '../../trpc.js';
-import {
-  DEFAULT_PRICE_PLN,
-  MAX_PRICE_PLN,
-  MIN_PRICE_PLN,
-  PAYWALL_DEFAULT_ON,
-  type PaywallConfig,
-} from '@bcv2/shared';
+import { MAX_PRICE_PLN, MIN_PRICE_PLN } from '@bcv2/shared';
 import { getDb } from '../../db/index.js';
-import { users, walletTransactions } from '../../db/schema.js';
-import { randomUUID } from 'node:crypto';
+import { paymentProviderIdValues, subscriptions, users, walletTransactions } from '../../db/schema.js';
+import { getPersistedPaywallConfig, setPersistedPaywallConfig } from './access.js';
+import { creditWallet } from './ledger.js';
+import { getProvider } from './providers.js';
+
+const PAGE_SIZE = 20;
 
 export const subscriptionsRouter = router({
   balance: protectedProcedure.query(async ({ ctx }) => {
@@ -22,51 +20,89 @@ export const subscriptionsRouter = router({
     return { walletBalanceCents: user?.walletBalanceCents ?? 0 };
   }),
 
+  myStatus: protectedProcedure.query(async ({ ctx }) => {
+    const db = getDb();
+    const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, ctx.user.id));
+    if (!sub) return null;
+    return {
+      status: sub.status,
+      trialEndsAt: sub.trialEndsAt?.toISOString() ?? null,
+      currentPeriodEnd: sub.currentPeriodEnd?.toISOString() ?? null,
+      priceCents: sub.priceCents,
+    };
+  }),
+
+  // Top-up: provider stub checkout -> mock completes synchronously -> credit
+  // the wallet ledger. A real /webhooks/:provider route runs the same
+  // creditWallet() path for when real provider keys land (docs/DECISIONS.md).
   topUp: protectedProcedure
     .input(
       z.object({
         amountCents: z.number().int().positive(),
+        provider: z.enum(paymentProviderIdValues),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
-
-      return await db.transaction(async (tx) => {
-        await tx.insert(walletTransactions).values({
-          id: randomUUID(),
-          userId: ctx.user.id,
-          amountCents: input.amountCents,
-          reason: 'top-up',
-        });
-
-        await tx
-          .update(users)
-          .set({
-            walletBalanceCents: sql`${users.walletBalanceCents} + ${input.amountCents}`,
-          })
-          .where(eq(users.id, ctx.user.id));
-
-        const [updated] = await tx
-          .select({ walletBalanceCents: users.walletBalanceCents })
-          .from(users)
-          .where(eq(users.id, ctx.user.id));
-
-        return { walletBalanceCents: updated?.walletBalanceCents ?? 0 };
+      const checkout = await getProvider(input.provider).createCheckout({
+        userId: ctx.user.id,
+        amountCents: input.amountCents,
+      });
+      return creditWallet({
+        userId: ctx.user.id,
+        amountCents: checkout.amountCents,
+        type: 'topup',
+        provider: input.provider,
+        providerRef: checkout.providerRef,
+        reason: 'top-up',
       });
     }),
 
-  paywallStatus: publicProcedure.query(() => {
-    // Phase 0 stub: returns compile-time default. Does not require MySQL.
-    return { paywallEnabled: PAYWALL_DEFAULT_ON };
+  transactions: protectedProcedure
+    .input(
+      z
+        .object({ cursor: z.string().datetime().optional(), limit: z.number().int().min(1).max(50).optional() })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const db = getDb();
+      const limit = input?.limit ?? PAGE_SIZE;
+      const conditions = [eq(walletTransactions.userId, ctx.user.id)];
+      if (input?.cursor) {
+        conditions.push(lt(walletTransactions.createdAt, new Date(input.cursor)));
+      }
+
+      const rows = await db
+        .select()
+        .from(walletTransactions)
+        .where(and(...conditions))
+        .orderBy(desc(walletTransactions.createdAt))
+        .limit(limit + 1);
+
+      const page = rows.slice(0, limit);
+      const last = page[page.length - 1];
+      return {
+        items: page.map((r) => ({
+          id: r.id,
+          amountCents: r.amountCents,
+          type: r.type,
+          reason: r.reason,
+          provider: r.provider,
+          status: r.status,
+          createdAt: r.createdAt.toISOString(),
+        })),
+        nextCursor: rows.length > limit && last ? last.createdAt.toISOString() : null,
+      };
+    }),
+
+  // Public so pre-login pages can show pricing; reads the same persisted
+  // config that evaluateAccess() enforces, so the two never disagree.
+  paywallStatus: publicProcedure.query(async () => {
+    const config = await getPersistedPaywallConfig();
+    return { paywallEnabled: config.paywallEnabled };
   }),
 
-  getPaywallConfig: adminProcedure.query(() => {
-    // TODO(phase-1): read persisted config from site_content.
-    const config: PaywallConfig = {
-      paywallEnabled: PAYWALL_DEFAULT_ON,
-      pricePln: DEFAULT_PRICE_PLN,
-    };
-    return config;
+  getPaywallConfig: adminProcedure.query(async () => {
+    return getPersistedPaywallConfig();
   }),
 
   setPaywallConfig: adminProcedure
@@ -76,12 +112,8 @@ export const subscriptionsRouter = router({
         pricePln: z.number().int().min(MIN_PRICE_PLN).max(MAX_PRICE_PLN),
       })
     )
-    .mutation(({ input }) => {
-      // TODO(phase-1): persist input to site_content kv store.
-      const config: PaywallConfig = {
-        paywallEnabled: input.paywallEnabled,
-        pricePln: input.pricePln,
-      };
-      return config;
+    .mutation(async ({ input }) => {
+      await setPersistedPaywallConfig(input);
+      return input;
     }),
 });

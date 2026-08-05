@@ -9,6 +9,7 @@ import { env } from '../../env.js';
 import { verifySessionToken } from '../../lib/jwt.js';
 import { getStorage, newUploadKey } from '../../lib/storage.js';
 import { recalculateUserScore } from '../ranking/scoring.js';
+import { evaluateAccess } from '../subscriptions/access.js';
 
 const MAX_EDGE = 1600;
 const THUMB_EDGE = 480;
@@ -31,7 +32,12 @@ export async function handleUpload(c: Context) {
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
   const session = token ? await verifySessionToken(token) : null;
 
-  if (!session && !(await anonymousUploadsAllowed())) {
+  if (session) {
+    const access = await evaluateAccess(session.sub, session.role);
+    if (!access.allowed) {
+      return c.json({ error: 'PAYWALL' }, 402);
+    }
+  } else if (!(await anonymousUploadsAllowed())) {
     return c.json({ error: 'Anonymous uploads are disabled' }, 403);
   }
 

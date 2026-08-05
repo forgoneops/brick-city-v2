@@ -1,13 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { verifySessionToken } from './lib/jwt.js';
-import { getDb } from './db/index.js';
-import { users } from './db/schema.js';
-import { eq } from 'drizzle-orm';
-import {
-  PAYWALL_DEFAULT_ON,
-  type Role,
-} from '@bcv2/shared';
+import type { Role } from '@bcv2/shared';
+import { requireAccessOrThrow } from './modules/subscriptions/access.js';
 
 export interface Context extends Record<string, unknown> {
   user: { id: string; role: Role } | null;
@@ -60,34 +55,18 @@ export const adminProcedure = protectedProcedure.use(roleGuard('admin'));
 export const moderatorProcedure = protectedProcedure.use(roleGuard('admin', 'moderator'));
 
 /**
- * Phase 0 stub: verifies the current user still has active access under the
- * current paywall configuration (trial, wallet balance, or paywall off).
- * Requires a database connection. NOT wired into public smoke tests.
+ * Verifies the current user still has active access under the persisted
+ * paywall configuration (trial, active subscription, wallet auto-debit, or
+ * paywall off) — delegates to modules/subscriptions/access.ts, which also
+ * grants a staff (admin/moderator) bypass. See docs/DECISIONS.md for which
+ * endpoints this is actually wired onto.
  */
 export const requireActiveAccess = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
   }
-
-  // TODO(phase-1): read persisted paywall config from site_content kv store
-  // instead of the compile-time default.
-  if (!PAYWALL_DEFAULT_ON) {
-    return next({ ctx: { user: ctx.user } });
-  }
-
-  const db = getDb();
-  const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id));
-  if (!user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'User not found' });
-  }
-
-  const now = new Date();
-  const trialActive = user.trialEndsAt && user.trialEndsAt > now;
-  const hasBalance = user.walletBalanceCents > 0;
-
-  if (!trialActive && !hasBalance) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'PAYWALL' });
-  }
-
+  await requireAccessOrThrow(ctx.user.id, ctx.user.role);
   return next({ ctx: { user: ctx.user } });
 });
+
+export const activeAccessProcedure = protectedProcedure.use(requireActiveAccess);

@@ -2,11 +2,11 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, protectedProcedure, router } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
-import { users, invites, inviteRedemptions } from '../../db/schema.js';
+import { users, invites, inviteRedemptions, subscriptions } from '../../db/schema.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { signSessionToken } from '../../lib/jwt.js';
 import { eq, sql } from 'drizzle-orm';
-import { TRIAL_DAYS, type PublicUser } from '@bcv2/shared';
+import { DEFAULT_PRICE_PLN, TRIAL_DAYS, type PublicUser } from '@bcv2/shared';
 import { randomUUID } from 'node:crypto';
 
 function toPublicUser(user: typeof users.$inferSelect): PublicUser {
@@ -72,6 +72,14 @@ export const authRouter = router({
           role: 'user',
           passwordHash,
           trialEndsAt,
+        });
+
+        await tx.insert(subscriptions).values({
+          id: randomUUID(),
+          userId,
+          status: 'trialing',
+          trialEndsAt,
+          priceCents: DEFAULT_PRICE_PLN * 100,
         });
 
         await tx

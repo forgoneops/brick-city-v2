@@ -1,6 +1,7 @@
 import type React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon.js';
+import { PaywallGate } from './PaywallGate.js';
 import { useT, type Locale, LOCALES } from '../i18n/index.js';
 import { FEATURES } from '../config/features.js';
 
@@ -48,11 +49,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isBare = location.pathname === '/login' || location.pathname === '/invite';
 
   if (isBare) {
-    return <div className="min-h-screen bg-ink text-bone">{children}</div>;
+    return (
+      <div className="min-h-screen bg-ink text-bone">
+        <PaywallGate />
+        {children}
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-ink text-bone">
+      <PaywallGate />
       {/* Side-alley nav — vertical mono list on the desktop edge */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-44 flex-col border-r border-fog bg-ink md:flex">
         <Link to="/" className="block border-b border-fog px-4 py-4">

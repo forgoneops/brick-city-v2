@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { protectedProcedure, publicProcedure, router, type Context } from '../../trpc.js';
+import { activeAccessProcedure, protectedProcedure, publicProcedure, router, type Context } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
 import { checkIns, pins, pinTypeValues, users } from '../../db/schema.js';
 import { recalculateUserScore } from '../ranking/scoring.js';
@@ -36,7 +36,8 @@ export const mapRouter = router({
     }));
   }),
 
-  submit: protectedProcedure
+  // Content-creation endpoint — gated by paywall access (docs/DECISIONS.md).
+  submit: activeAccessProcedure
     .input(
       z.object({
         name: z.string().min(1).max(255),

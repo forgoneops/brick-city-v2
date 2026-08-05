@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { moderatorProcedure, protectedProcedure, publicProcedure, router } from '../../trpc.js';
+import { activeAccessProcedure, moderatorProcedure, protectedProcedure, publicProcedure, router } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
 import { forumCategories, forumProps, forumReplies, forumThreads, users } from '../../db/schema.js';
 
@@ -119,7 +119,7 @@ export const forumRouter = router({
   // Creates the thread plus its opening post (the first reply carries the
   // body — forumThreads has no body column, matching the table shape given
   // in the brief).
-  createThread: protectedProcedure
+  createThread: activeAccessProcedure
     .input(
       z.object({
         categoryId: z.string().min(1),
@@ -156,7 +156,7 @@ export const forumRouter = router({
       return { id: threadId };
     }),
 
-  reply: protectedProcedure
+  reply: activeAccessProcedure
     .input(z.object({ threadId: z.string().min(1), body: z.string().min(1).max(4000) }))
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
