@@ -11,6 +11,7 @@ import { eventsRouter } from './modules/events/router.js';
 import { adminRouter } from './modules/admin/router.js';
 import { invitesRouter } from './modules/invites/router.js';
 import { chatRouter } from './modules/chat/router.js';
+import { usersRouter } from './modules/users/router.js';
 
 export const appRouter = router({
   auth: authRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   admin: adminRouter,
   invites: invitesRouter,
   chat: chatRouter,
+  users: usersRouter,
 });
 
 export type AppRouter = typeof appRouter;
