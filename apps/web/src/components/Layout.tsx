@@ -23,6 +23,7 @@ const NAV_META: Record<string, { to: string; icon: IconName }> = {
   nav_events: { to: '/events', icon: 'lantern' },
   nav_forum: { to: '/forum', icon: 'thread' },
   nav_ranking: { to: '/ranking', icon: 'scale' },
+  nav_chat: { to: '/chat', icon: 'drip-dot' },
 };
 const DEFAULT_NAV_KEYS = Object.keys(NAV_META);
 
@@ -30,6 +31,12 @@ function useNavItems(): NavItem[] {
   const { config } = useCms();
   const cmsItems = config?.nav.items;
   const keys = cmsItems && cmsItems.length > 0 ? cmsItems.filter((i) => i.visible).map((i) => i.key) : DEFAULT_NAV_KEYS;
+  // Modules launched after the CMS nav config was first persisted (e.g. chat)
+  // aren't in the stored key list yet — append them so they show up without
+  // forcing an admin to re-save the nav order.
+  for (const key of DEFAULT_NAV_KEYS) {
+    if (!keys.includes(key)) keys.push(key);
+  }
   const items: NavItem[] = keys.filter((key) => NAV_META[key]).map((key) => ({ key, ...NAV_META[key] }));
   // Battles stays entirely gated by the compile-time flag, never by CMS nav
   // visibility — see docs/DECISIONS.md.
