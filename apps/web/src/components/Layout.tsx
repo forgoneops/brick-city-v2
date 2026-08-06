@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon.js';
 import { PaywallGate } from './PaywallGate.js';
 import { useT, type Locale, LOCALES } from '../i18n/index.js';
+import { useCms } from '../lib/cms.js';
 import { FEATURES } from '../config/features.js';
 
 interface NavItem {
@@ -11,16 +12,32 @@ interface NavItem {
   icon: IconName;
 }
 
-const navItems: NavItem[] = [
-  { to: '/', key: 'nav_home', icon: 'wall-brick' },
-  { to: '/gallery', key: 'nav_gallery', icon: 'spray-can' },
-  { to: '/map', key: 'nav_map', icon: 'pin-folded' },
-  { to: '/news', key: 'nav_news', icon: 'zine-page' },
-  { to: '/events', key: 'nav_events', icon: 'lantern' },
-  ...(FEATURES.battles ? [{ to: '/battles', key: 'nav_battles', icon: 'crown-stencil' as IconName }] : []),
-  { to: '/forum', key: 'nav_forum', icon: 'thread' },
-  { to: '/ranking', key: 'nav_ranking', icon: 'scale' },
-];
+// key -> {to, icon} — the CMS nav config only ever carries order + visible
+// per key; route/icon stay code-defined here (Phase 4 spec: "order,
+// visibility", not arbitrary new nav items).
+const NAV_META: Record<string, { to: string; icon: IconName }> = {
+  nav_home: { to: '/', icon: 'wall-brick' },
+  nav_gallery: { to: '/gallery', icon: 'spray-can' },
+  nav_map: { to: '/map', icon: 'pin-folded' },
+  nav_news: { to: '/news', icon: 'zine-page' },
+  nav_events: { to: '/events', icon: 'lantern' },
+  nav_forum: { to: '/forum', icon: 'thread' },
+  nav_ranking: { to: '/ranking', icon: 'scale' },
+};
+const DEFAULT_NAV_KEYS = Object.keys(NAV_META);
+
+function useNavItems(): NavItem[] {
+  const { config } = useCms();
+  const cmsItems = config?.nav.items;
+  const keys = cmsItems && cmsItems.length > 0 ? cmsItems.filter((i) => i.visible).map((i) => i.key) : DEFAULT_NAV_KEYS;
+  const items: NavItem[] = keys.filter((key) => NAV_META[key]).map((key) => ({ key, ...NAV_META[key] }));
+  // Battles stays entirely gated by the compile-time flag, never by CMS nav
+  // visibility — see docs/DECISIONS.md.
+  if (FEATURES.battles) {
+    items.push({ to: '/battles', key: 'nav_battles', icon: 'crown-stencil' });
+  }
+  return items;
+}
 
 function LocaleSwitch() {
   const { t, locale, setLocale } = useT();
@@ -44,7 +61,9 @@ function LocaleSwitch() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useT();
+  const { config } = useCms();
   const location = useLocation();
+  const navItems = useNavItems();
   // Mystery pages render bare — black screen, no chrome (spec §6)
   const isBare = location.pathname === '/login' || location.pathname === '/invite';
 
@@ -57,9 +76,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const announcement = config?.announcement;
+
   return (
     <div className="min-h-screen bg-ink text-bone">
       <PaywallGate />
+      {announcement?.enabled && announcement.text && (
+        <div className="border-b border-fog bg-concrete px-4 py-2 text-center md:ml-44">
+          <p className="label-mono text-bone">
+            <span className="text-signal">/// </span>
+            {announcement.text}
+          </p>
+        </div>
+      )}
       {/* Side-alley nav — vertical mono list on the desktop edge */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-44 flex-col border-r border-fog bg-ink md:flex">
         <Link to="/" className="block border-b border-fog px-4 py-4">

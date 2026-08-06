@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { Stamp } from '../components/Stamp.js';
+import { Icon } from '../components/Icon.js';
 import { useT } from '../i18n/index.js';
 import { FEATURES, type FeatureName } from '../config/features.js';
 
@@ -187,6 +189,16 @@ export function Admin() {
       tag={`${t('admin_note')} / INTERNAL`}
     >
       <div className="space-y-8">
+        {/* Site CMS entry point — not in the public sidebar nav, which has
+            no role-gating; see docs/DECISIONS.md. */}
+        <Link
+          to="/admin/cms"
+          className="flex items-center gap-3 border border-fog bg-concrete px-4 py-3 transition-colors hover:border-signal hover:text-signal"
+        >
+          <Icon name="gate" size={20} />
+          <span className="label-mono text-bone">{t('admin_cms_link')}</span>
+        </Link>
+
         {/* Dashboard stats */}
         <section>
           <h2 className="label-mono mb-3">{t('admin_stats')}</h2>

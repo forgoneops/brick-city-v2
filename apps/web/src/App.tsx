@@ -12,6 +12,8 @@ import { Profile } from './pages/Profile.js';
 import { Login } from './pages/Login.js';
 import { Invite } from './pages/Invite.js';
 import { Admin } from './pages/Admin.js';
+import { AdminCms } from './pages/AdminCms.js';
+import { PublicPage } from './pages/PublicPage.js';
 import { NotFound } from './pages/NotFound.js';
 import { FEATURES } from './config/features.js';
 
@@ -33,6 +35,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/invite" element={<Invite />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/cms" element={<AdminCms />} />
+        <Route path="/pages/:slug" element={<PublicPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

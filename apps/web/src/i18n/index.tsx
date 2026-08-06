@@ -10,6 +10,7 @@ import {
 import en from './locales/en.json';
 import pl from './locales/pl.json';
 import de from './locales/de.json';
+import { useCms } from '../lib/cms.js';
 
 export const LOCALES = ['en', 'pl', 'de'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -36,6 +37,9 @@ function getInitialLocale(): Locale {
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => getInitialLocale());
+  // CmsProvider wraps I18nProvider (see main.tsx) specifically so t() can
+  // check admin-set overrides before falling back to the bundled JSON.
+  const { config } = useCms();
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -48,10 +52,12 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const t = useCallback(
     (key: string) => {
+      const override = config?.localeOverrides.values[locale]?.[key];
+      if (override) return override;
       const value = dictionaries[locale][key] ?? dictionaries.en[key];
       return value ?? key;
     },
-    [locale]
+    [locale, config]
   );
 
   const value = useMemo(

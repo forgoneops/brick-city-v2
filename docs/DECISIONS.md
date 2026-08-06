@@ -4,6 +4,63 @@ Non-trivial calls made while building Ranking / Forum / Subscriptions+Wallet
 under the autonomy directive, so they're reviewable after the fact instead of
 just disappearing into the diff.
 
+# Phase 4 — implementation decisions
+
+## Bug found and fixed: /events rendered a stub, not the real page
+
+`App.tsx` imports `Events` from `pages/Events.js`, which was still the
+Phase-0 `ModulePage` stub. The real, working implementation (fetches
+`events.list`, renders a live list) existed as a *second* export named
+`Events` inside `pages/News.tsx`, unreferenced by anything. Net effect: the
+`/events` route rendered an empty "EVENTS / NEXT BURN" placeholder in
+production despite the backend and a correct component both existing. Found
+while auditing routing/nav for Phase 4's nav-config work. Fixed by moving the
+real implementation into `Events.tsx` and trimming the now-dead `EventItem`
+type out of `News.tsx`; no behavior intentionally changed.
+
+## CMS backbone
+
+- **Config domains are JSON blobs in the existing `site_content` kv table**,
+  not new typed tables — `hero`, `announcement`, `nav`, `galleryCategories`,
+  `battleThemes`, `featureFlags`, `localeOverrides` each get one row keyed
+  `cms_<domain>`, parsed/validated through a zod schema in
+  `modules/cms/config.ts`. Info pages are the one exception: they get a real
+  `cmsPages` table, since per-slug CRUD and per-page optimistic locking don't
+  fit one shared blob cleanly.
+- **`subscriptionPriceCents` "moved" without duplicating storage.** The CMS
+  pricing tab's `setConfig({key:'pricing'})` delegates straight to
+  `subscriptions/access.ts`'s existing `getPersistedPaywallConfig`/
+  `setPersistedPaywallConfig` (built in Phase 3c) rather than adding a second
+  `cms_pricing` row that could drift out of sync with what `evaluateAccess`
+  actually reads.
+- **Optimistic locking is a plain `expectedUpdatedAt` string compare**, not a
+  version counter: the client passes back the `updatedAt` it last read for
+  that domain (or omits it entirely to skip the check, e.g. `reorderNav`'s
+  read-modify-write). Good enough for a single-admin-at-a-time CMS; a version
+  counter would only matter under real concurrent-editor contention, which
+  this product doesn't have.
+- **`battles` is force-clamped to `false` in the merged `featureFlags`
+  output**, regardless of what's stored in the `cms_feature_flags` row. The
+  admin UI's toggle is fully real (persists, round-trips) — battles is
+  included specifically as the flip's worked example — but the *effective*
+  value served to `getConfig` always wins false, per the standing CLAUDE.md
+  rule. Any other future flag added to the map is NOT special-cased and
+  behaves as a normal CMS-driven toggle.
+- **The "new nav entry" for Site CMS lives inside the Admin page, not the
+  public sidebar.** `Layout.tsx`'s sidebar nav has no concept of role-gating
+  today (it renders the same items to every visitor) and `/admin` itself was
+  already reached by direct URL only, not a sidebar link. Adding "Site CMS"
+  to the public nav would show an admin-only link to every regular visitor.
+  Instead it's a prominent gate-icon link at the top of `Admin.tsx` pointing
+  to the new `/admin/cms` route — discoverable from the admin surface,
+  invisible to everyone else.
+- **In-process cache, invalidated on every write.** `getCmsConfig()` caches
+  in a module-level variable; every `setConfig`/`reorderNav`/`pages.*`
+  mutation (and the raw `cms.setContent` escape hatch) calls
+  `invalidateCmsCache()`. Correct for this single-instance deploy; a
+  multi-instance deploy would need a real cache-invalidation bus, which is
+  Phase 5/production-topology territory, not this phase's.
+
 ## Ranking
 
 - **All-time bucket uses a sentinel `seasonId`, not `NULL`.** MySQL unique

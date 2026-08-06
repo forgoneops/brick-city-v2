@@ -368,6 +368,22 @@ export const paymentProviders = mysqlTable('payment_providers', {
   updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
 });
 
+// ---------------------------------------------------------------------------
+// Phase 4 — CMS: info pages (hero/announcement/nav/etc live as JSON blobs in
+// the existing site_content kv table via modules/cms/config.ts; pages get
+// their own table since CRUD-per-slug and per-page optimistic locking don't
+// fit a single JSON blob cleanly).
+// ---------------------------------------------------------------------------
+
+export const cmsPages = mysqlTable('cms_pages', {
+  slug: varchar('slug', { length: 128 }).primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  body: text('body').notNull(),
+  published: boolean('published').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Invite = typeof invites.$inferSelect;
@@ -383,3 +399,4 @@ export type RankingScore = typeof rankingScores.$inferSelect;
 export type ForumThread = typeof forumThreads.$inferSelect;
 export type ForumReply = typeof forumReplies.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
+export type CmsPageRow = typeof cmsPages.$inferSelect;

@@ -86,3 +86,87 @@ export interface PublicUser {
   trialEndsAt: string | null;
   createdAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 4 — CMS config (typed layer over the site_content kv store)
+// ---------------------------------------------------------------------------
+
+export interface HeroConfig {
+  title: string;
+  subtitle: string;
+  cta: string;
+  updatedAt: string | null;
+}
+
+export interface AnnouncementConfig {
+  text: string;
+  enabled: boolean;
+  updatedAt: string | null;
+}
+
+export interface NavItemConfig {
+  key: string;
+  visible: boolean;
+}
+
+export interface NavConfig {
+  items: NavItemConfig[];
+  updatedAt: string | null;
+}
+
+export interface GalleryCategoryEntry {
+  category: string;
+  visible: boolean;
+}
+
+export interface GalleryCategoriesConfig {
+  items: GalleryCategoryEntry[];
+  updatedAt: string | null;
+}
+
+export interface BattleThemesConfig {
+  items: string[];
+  updatedAt: string | null;
+}
+
+// Flag names are open-ended (Record<string, boolean>) so new flags can be
+// added without a shared-package change; `battles` is always present as the
+// worked example. See docs/DECISIONS.md — battles stays force-false
+// regardless of this map's stored value, per the standing CLAUDE.md rule.
+export interface FeatureFlagsConfig {
+  flags: Record<string, boolean>;
+  updatedAt: string | null;
+}
+
+export type LocaleOverrideMap = Record<string, Record<string, string>>;
+
+export interface LocaleOverridesConfig {
+  values: LocaleOverrideMap;
+  updatedAt: string | null;
+}
+
+export interface CmsPricingConfig {
+  pricePln: number;
+  paywallEnabled: boolean;
+  updatedAt: string | null;
+}
+
+export interface CmsConfig {
+  hero: HeroConfig;
+  announcement: AnnouncementConfig;
+  nav: NavConfig;
+  galleryCategories: GalleryCategoriesConfig;
+  battleThemes: BattleThemesConfig;
+  featureFlags: FeatureFlagsConfig;
+  localeOverrides: LocaleOverridesConfig;
+  pricing: CmsPricingConfig;
+}
+
+export interface CmsPage {
+  slug: string;
+  title: string;
+  body: string;
+  published: boolean;
+  updatedAt: string;
+  createdAt: string;
+}

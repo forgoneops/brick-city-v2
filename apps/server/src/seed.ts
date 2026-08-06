@@ -1,8 +1,9 @@
-// Seed script — Phase 2 + Phase 3 verification data.
+// Seed script — Phase 2 + Phase 3 + Phase 4 verification data.
 // Creates: 1 admin, 7 writers (2 with subscription demo states), 1 invite
 // code, 6 photos, 3 pins, 2 posts, 2 events, 1 open report, 1 active season
 // with 5 scored users, 6 forum categories + 2 threads + replies + props,
-// 3 payment providers, persisted paywall config, 2 wallet transactions.
+// 3 payment providers, persisted paywall config, 2 wallet transactions,
+// 1 published CMS info page (/pages/rules).
 // Idempotent per run (fixed IDs, insert-ignore).
 // Usage: DATABASE_URL=... npm run db:seed -w @bcv2/server
 import { randomUUID } from 'node:crypto';
@@ -12,6 +13,7 @@ import { DEFAULT_PRICE_PLN, FORUM_CATEGORIES, TRIAL_DAYS } from '@bcv2/shared';
 import { getDb } from './db/index.js';
 import {
   checkIns,
+  cmsPages,
   events,
   forumCategories,
   forumProps,
@@ -363,6 +365,17 @@ async function main() {
     .update(users)
     .set({ walletBalanceCents: 500 })
     .where(eq(users.id, WRITER2_ID));
+
+  // --- Phase 4: one published CMS info page for E2E verification. ---
+  await db
+    .insert(cmsPages)
+    .values({
+      slug: 'rules',
+      title: 'RULES OF THE WALL',
+      body: 'Respect the buff.\nCredit the writer.\nNo snitching, ever.',
+      published: true,
+    })
+    .onDuplicateKeyUpdate({ set: { title: sql`${cmsPages.title}` } });
 
   console.log('Seed complete:');
   console.log('  admin login   admin@brickcity.local / brickcity123');

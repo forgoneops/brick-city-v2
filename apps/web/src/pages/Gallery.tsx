@@ -4,6 +4,7 @@ import { WantedCard } from '../components/WantedCard.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
+import { useCms } from '../lib/cms.js';
 import { GALLERY_CATEGORIES } from '@bcv2/shared';
 
 type GalleryItem = {
@@ -22,6 +23,12 @@ type GalleryItem = {
 export function Gallery() {
   const { t } = useT();
   const { user } = useAuth();
+  const { config } = useCms();
+  const cmsCategories = config?.galleryCategories.items;
+  const visibleCategories =
+    cmsCategories && cmsCategories.length > 0
+      ? cmsCategories.filter((c) => c.visible).map((c) => c.category)
+      : [...GALLERY_CATEGORIES];
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [category, setCategory] = useState<string>('');
   const [cursor, setCursor] = useState<string | undefined>();
@@ -67,7 +74,7 @@ export function Gallery() {
     >
       {/* Category filter */}
       <div className="flex flex-wrap gap-2 border-b border-fog pb-3 mb-6">
-        {(['', ...GALLERY_CATEGORIES] as const).map((cat) => (
+        {['', ...visibleCategories].map((cat) => (
           <button
             key={cat || 'all'}
             type="button"
