@@ -7,6 +7,7 @@
   "nav_battles": "Battles",
   "nav_forum": "Forum",
   "nav_ranking": "Rangliste",
+  "nav_chat": "Chat",
   "nav_profile": "Profil",
   "nav_login": "Login",
   "nav_invite": "Invite",
@@ -148,5 +149,18 @@
   "admin_invites_title": "Einladungen",
   "admin_invites_uses": "Nutzungen",
   "admin_invites_expiry_days": "Läuft ab (Tage)",
-  "admin_invites_revoke": "Widerrufen"
+  "admin_invites_revoke": "Widerrufen",
+  "chat_title": "Yard-Chat",
+  "chat_rooms": "Räume",
+  "chat_dms": "DMs",
+  "chat_room_wall": "Wall",
+  "chat_room_spots": "Spots",
+  "chat_room_battles": "Battles",
+  "chat_online": "LIVE",
+  "chat_offline": "OFFLINE",
+  "chat_empty": "RUHIG HIER. SCHREIB WAS.",
+  "chat_placeholder": "Schreib an die Wand...",
+  "chat_send": "Senden",
+  "chat_who_online": "JETZT ONLINE",
+  "chat_no_dms": "Noch keine DMs — klick DM neben jemandem online."
 }
