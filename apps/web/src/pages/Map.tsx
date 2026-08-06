@@ -7,14 +7,11 @@ import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
 
-// Fix for default Leaflet marker icon in webpack/Vite environments.
+// Fix for default Leaflet marker icon in Vite (ESM) — never use require() in browser code.
 import L from 'leaflet';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const iconUrl = require('leaflet/dist/images/marker-icon.png');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const iconRetinaUrl = require('leaflet/dist/images/marker-icon-2x.png');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const shadowUrl = require('leaflet/dist/images/marker-shadow.png');
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 // @ts-expect-error — Leaflet merges onto L.Icon.Default.prototype
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl });
