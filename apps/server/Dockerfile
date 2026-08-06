@@ -29,6 +29,14 @@ FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Pass --build-arg GIT_SHA=$(git rev-parse HEAD) at build time so the image
+# self-reports its commit (docker inspect label, and GET /version at
+# runtime) instead of relying on correlating build/container timestamps
+# against a source checkout by hand.
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
+LABEL org.opencontainers.image.revision=$GIT_SHA
+
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
