@@ -7,6 +7,7 @@
   "nav_battles": "Batalie",
   "nav_forum": "Forum",
   "nav_ranking": "Ranking",
+  "nav_chat": "Czat",
   "nav_profile": "Profil",
   "nav_login": "Logowanie",
   "nav_invite": "Zaproszenie",
@@ -148,5 +149,18 @@
   "admin_invites_title": "Zaproszenia",
   "admin_invites_uses": "Użycia",
   "admin_invites_expiry_days": "Wygasa (dni)",
-  "admin_invites_revoke": "Unieważnij"
+  "admin_invites_revoke": "Unieważnij",
+  "chat_title": "Czat podwórka",
+  "chat_rooms": "Kanały",
+  "chat_dms": "PW",
+  "chat_room_wall": "Ściana",
+  "chat_room_spots": "Spoty",
+  "chat_room_battles": "Batalie",
+  "chat_online": "NA ŻYWO",
+  "chat_offline": "OFFLINE",
+  "chat_empty": "CICHO TU. NAPISZ COŚ.",
+  "chat_placeholder": "Napisz na ścianie...",
+  "chat_send": "Wyślij",
+  "chat_who_online": "ONLINE",
+  "chat_no_dms": "Brak PW — kliknij DM przy kimś online."
 }
