@@ -17,8 +17,8 @@
   them, don't invent parallel motifs.
 
 ## Product rules
-- `FEATURES.battles` (`apps/web/src/config/features.ts`) stays `false`. The module is fully
-  implemented server + client side but hidden from the UI — flip only on explicit instruction.
+- `FEATURES.battles` (`apps/web/src/config/features.ts`) is `true` — battles launched on explicit
+  owner instruction. The CMS feature-flags toggle controls it live.
 - Registration is invite-only. New accounts get a 7-day full-access trial
   (`TRIAL_DAYS` in the auth module), then the paywall applies (~25 PLN/month, toggle-able
   from admin).
@@ -56,6 +56,6 @@
   sweep) + deploy prep (Dockerfile, backup script, .env.production.example, docs/deploy.md):
   **done**. See `docs/deploy.md` for the actual deploy walkthrough and `docs/DECISIONS.md`
   for every non-obvious call made across all phases.
-- Everything in `docs/plan.md`'s stage-gate is now built. Remaining ideas noted in that doc's
-  "OPEN DECISIONS" (payments provider choice, ranking season cadence) are still open —
-  the mechanisms exist and work, those are product/business calls, not implementation gaps.
+- Post-launch: invites management (MY INVITES + MOD DESK) and the battles module are
+  **live**. Remaining ideas noted in `docs/plan.md`'s "OPEN DECISIONS" (payments provider
+  choice, ranking season cadence) are product/business calls, not implementation gaps.

@@ -27,11 +27,9 @@ export type ConfigDomain = keyof typeof KEYS;
 // below, not by nav visibility).
 const DEFAULT_NAV_ORDER = ['nav_home', 'nav_gallery', 'nav_map', 'nav_news', 'nav_events', 'nav_forum', 'nav_ranking'];
 
-// Flags that stay force-false regardless of what's stored, per the standing
-// CLAUDE.md rule ("FEATURES.battles stays false"). The CMS toggle for these
-// is still fully real (persists, round-trips, shows in the admin UI) — only
-// the *effective* merged value served to getConfig is clamped.
-const PROTECTED_FALSE_FLAGS = ['battles'];
+// Flags that stay force-false regardless of what's stored. Empty as of the
+// battles launch — battles is now a live module, togglable from the CMS.
+const PROTECTED_FALSE_FLAGS: string[] = [];
 
 export const heroConfigSchema = z.object({
   title: z.string().min(1).max(255),
@@ -95,7 +93,7 @@ function defaultValue(domain: ConfigDomain): unknown {
     case 'battleThemes':
       return { items: [] };
     case 'featureFlags':
-      return { flags: { battles: false } };
+      return { flags: { battles: true } };
     case 'localeOverrides':
       return { values: { en: {}, pl: {}, de: {} } };
   }
