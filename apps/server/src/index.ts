@@ -18,6 +18,10 @@ app.get('/health', (c) => {
   return c.json({ ok: true });
 });
 
+app.get('/version', (c) => {
+  return c.json({ sha: process.env.GIT_SHA ?? 'unknown' });
+});
+
 // Uploaded images (local storage driver).
 app.use(
   '/uploads/*',
