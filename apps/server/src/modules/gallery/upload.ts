@@ -8,6 +8,7 @@ import { photos, siteContent } from '../../db/schema.js';
 import { env } from '../../env.js';
 import { verifySessionToken } from '../../lib/jwt.js';
 import { getStorage, newUploadKey } from '../../lib/storage.js';
+import { checkRateLimit } from '../../lib/rateLimit.js';
 import { recalculateUserScore } from '../ranking/scoring.js';
 import { evaluateAccess } from '../subscriptions/access.js';
 
@@ -31,6 +32,14 @@ export async function handleUpload(c: Context) {
   const auth = c.req.header('authorization');
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
   const session = token ? await verifySessionToken(token) : null;
+
+  // Not a tRPC procedure, so rate limiting is a manual check here rather
+  // than the rateLimited() middleware used elsewhere — same bucket logic.
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const rateLimitKey = `upload:${session?.sub ?? ip}`;
+  if (!checkRateLimit(rateLimitKey, { windowMs: 60_000, max: 10 })) {
+    return c.json({ error: 'Too many uploads — slow down.' }, 429);
+  }
 
   if (session) {
     const access = await evaluateAccess(session.sub, session.role);

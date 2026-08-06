@@ -57,11 +57,14 @@ export const battleThemesConfigSchema = z.object({
 });
 
 export const featureFlagsConfigSchema = z.object({
-  flags: z.record(z.string(), z.boolean()),
+  flags: z.record(z.string().max(64), z.boolean()),
 });
 
+// Phase 5 validation sweep: this was the one config domain with no length
+// caps at all — a malicious or buggy admin session could otherwise write an
+// arbitrarily large blob into site_content.
 export const localeOverridesConfigSchema = z.object({
-  values: z.record(z.string(), z.record(z.string(), z.string())),
+  values: z.record(z.string().max(8), z.record(z.string().max(128), z.string().max(2000))),
 });
 
 export const pricingConfigSchema = z.object({

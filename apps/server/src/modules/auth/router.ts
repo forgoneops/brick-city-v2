@@ -1,13 +1,19 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, protectedProcedure, router } from '../../trpc.js';
+import { publicProcedure, protectedProcedure, rateLimited, router } from '../../trpc.js';
 import { getDb } from '../../db/index.js';
 import { users, invites, inviteRedemptions, subscriptions } from '../../db/schema.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { signSessionToken } from '../../lib/jwt.js';
+import { verifyTurnstile } from '../../lib/turnstile.js';
 import { eq, sql } from 'drizzle-orm';
 import { DEFAULT_PRICE_PLN, TRIAL_DAYS, type PublicUser } from '@bcv2/shared';
 import { randomUUID } from 'node:crypto';
+
+// Bot/abuse hardening (Phase 5): both endpoints are the most abuse-prone in
+// the app (credential stuffing, invite-code brute-forcing, spam accounts).
+const registerLimited = publicProcedure.use(rateLimited('auth.register', { windowMs: 60_000, max: 5 }));
+const loginLimited = publicProcedure.use(rateLimited('auth.login', { windowMs: 60_000, max: 10 }));
 
 function toPublicUser(user: typeof users.$inferSelect): PublicUser {
   return {
@@ -22,16 +28,22 @@ function toPublicUser(user: typeof users.$inferSelect): PublicUser {
 }
 
 export const authRouter = router({
-  register: publicProcedure
+  register: registerLimited
     .input(
       z.object({
         email: z.string().email(),
         nick: z.string().min(2).max(32),
         password: z.string().min(8),
         inviteCode: z.string().min(1),
+        turnstileToken: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
+      const humanVerified = await verifyTurnstile(input.turnstileToken);
+      if (!humanVerified) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Bot check failed' });
+      }
+
       const db = getDb();
 
       return await db.transaction(async (tx) => {
@@ -100,7 +112,7 @@ export const authRouter = router({
       });
     }),
 
-  login: publicProcedure
+  login: loginLimited
     .input(
       z.object({
         email: z.string().email(),

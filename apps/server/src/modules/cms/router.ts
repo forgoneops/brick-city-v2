@@ -101,7 +101,7 @@ export const cmsRouter = router({
         z.object({
           title: z.string().min(1).max(255),
           category: z.string().min(1).max(64).default('dispatch'),
-          body: z.string().min(1),
+          body: z.string().min(1).max(20_000),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -201,7 +201,7 @@ export const cmsRouter = router({
             .max(128)
             .regex(/^[a-z0-9-]+$/, 'lowercase letters, numbers, hyphens only'),
           title: z.string().min(1).max(255),
-          body: z.string().min(1),
+          body: z.string().min(1).max(20_000),
           published: z.boolean(),
           expectedUpdatedAt: nullableIsoString.optional(),
         })

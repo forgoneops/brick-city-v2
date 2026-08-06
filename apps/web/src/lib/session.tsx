@@ -7,7 +7,13 @@ interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, nick: string, password: string, inviteCode: string) => Promise<void>;
+  register: (
+    email: string,
+    nick: string,
+    password: string,
+    inviteCode: string,
+    turnstileToken?: string
+  ) => Promise<void>;
   logout: () => void;
 }
 
@@ -36,8 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (email: string, nick: string, password: string, inviteCode: string) => {
-      const res = await trpc.auth.register.mutate({ email, nick, password, inviteCode });
+    async (email: string, nick: string, password: string, inviteCode: string, turnstileToken?: string) => {
+      const res = await trpc.auth.register.mutate({ email, nick, password, inviteCode, turnstileToken });
       setToken(res.token);
       setUser(res.user);
     },

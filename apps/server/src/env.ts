@@ -10,6 +10,10 @@ const envSchema = z.object({
   STORAGE_DRIVER: z.enum(['local']).default('local'),
   UPLOADS_DIR: z.string().default('./uploads'),
   MAX_UPLOAD_MB: z.coerce.number().default(15),
+  // Cloudflare Turnstile anti-bot. Empty = disabled (dev default); when set,
+  // auth.register requires and verifies a turnstileToken. See lib/turnstile.ts
+  // and docs/DECISIONS.md ("Phase 5").
+  TURNSTILE_SECRET_KEY: z.string().default(''),
 });
 
 export const env = envSchema.parse(process.env);

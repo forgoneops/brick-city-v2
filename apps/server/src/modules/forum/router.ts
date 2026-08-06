@@ -2,11 +2,25 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { activeAccessProcedure, moderatorProcedure, protectedProcedure, publicProcedure, router } from '../../trpc.js';
+import {
+  activeAccessProcedure,
+  moderatorProcedure,
+  protectedProcedure,
+  publicProcedure,
+  rateLimited,
+  router,
+} from '../../trpc.js';
 import { getDb } from '../../db/index.js';
 import { forumCategories, forumProps, forumReplies, forumThreads, users } from '../../db/schema.js';
 
 const PAGE_SIZE = 20;
+
+// Spam hardening (Phase 5): posting is the abuse-prone surface here, not
+// browsing/reacting.
+const createThreadLimited = activeAccessProcedure.use(
+  rateLimited('forum.createThread', { windowMs: 60_000, max: 10 })
+);
+const replyLimited = activeAccessProcedure.use(rateLimited('forum.reply', { windowMs: 60_000, max: 20 }));
 
 export const forumRouter = router({
   categories: publicProcedure.query(async () => {
@@ -119,7 +133,7 @@ export const forumRouter = router({
   // Creates the thread plus its opening post (the first reply carries the
   // body — forumThreads has no body column, matching the table shape given
   // in the brief).
-  createThread: activeAccessProcedure
+  createThread: createThreadLimited
     .input(
       z.object({
         categoryId: z.string().min(1),
@@ -156,7 +170,7 @@ export const forumRouter = router({
       return { id: threadId };
     }),
 
-  reply: activeAccessProcedure
+  reply: replyLimited
     .input(z.object({ threadId: z.string().min(1), body: z.string().min(1).max(4000) }))
     .mutation(async ({ ctx, input }) => {
       const db = getDb();

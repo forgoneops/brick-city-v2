@@ -46,5 +46,16 @@
 - Phase 2 — core portal on the backend (DB schema/migrations, gallery upload pipeline,
   props, map pins with moderation queue, zine + events publish flow, admin wired to DB,
   reports queue): **done**, frontend wired to the real tRPC API on top of it.
-- Phase 3 (ranking ∥ forum ∥ subscriptions+wallet), Phase 4 (full CMS), Phase 5
-  (hardening + deploy): not started — see `docs/plan.md` for scope.
+- Phase 3 — ranking (seasons, scoring, leaderboard), forum (categories/threads/replies/
+  props, moderation), subscriptions+wallet (mock payment providers, real paywall gate on
+  map.submit/forum.createThread+reply/gallery upload): **done**.
+- Phase 4 — full site CMS (typed config over site_content kv, admin /admin/cms with 5 tabs,
+  public site reads hero/announcement/nav/gallery-categories/locale-overrides from it,
+  /pages/:slug for published info pages): **done**.
+- Phase 5 — hardening (Turnstile anti-bot + rate limiting on auth/upload/forum, validation
+  sweep) + deploy prep (Dockerfile, backup script, .env.production.example, docs/deploy.md):
+  **done**. See `docs/deploy.md` for the actual deploy walkthrough and `docs/DECISIONS.md`
+  for every non-obvious call made across all phases.
+- Everything in `docs/plan.md`'s stage-gate is now built. Remaining ideas noted in that doc's
+  "OPEN DECISIONS" (payments provider choice, ranking season cadence) are still open —
+  the mechanisms exist and work, those are product/business calls, not implementation gaps.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
+import { TurnstileWidget } from '../components/TurnstileWidget.js';
 
 export function Invite() {
   const { t } = useT();
@@ -11,6 +12,7 @@ export function Invite() {
   const [email, setEmail] = useState('');
   const [nick, setNick] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +21,7 @@ export function Invite() {
     setError(null);
     setLoading(true);
     try {
-      await register(email, nick, password, code);
+      await register(email, nick, password, code, turnstileToken);
       navigate('/');
     } catch {
       setError('REGISTRATION FAILED');
@@ -87,6 +89,8 @@ export function Invite() {
           className="input mt-2"
           required
         />
+
+        <TurnstileWidget onToken={setTurnstileToken} />
 
         {error && (
           <p className="label-mono mt-4 text-blood">{error}</p>

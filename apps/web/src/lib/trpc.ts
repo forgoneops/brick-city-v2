@@ -15,11 +15,16 @@ export function setToken(token: string | null) {
   }
 }
 
-// Same-origin client — vite dev proxies /trpc to the Hono server.
+// Same-origin by default (vite dev proxies /trpc to the Hono server; prod
+// recommends the same reverse-proxy topology — see docs/deploy.md, which
+// also covers the /uploads caveat that comes with going cross-origin).
+// Set VITE_API_BASE_URL to point at a backend on a different origin.
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+
 export const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: '/trpc',
+      url: `${API_BASE}/trpc`,
       headers() {
         const token = getToken();
         return token ? { authorization: `Bearer ${token}` } : {};

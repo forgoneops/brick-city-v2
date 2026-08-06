@@ -4,6 +4,70 @@ Non-trivial calls made while building Ranking / Forum / Subscriptions+Wallet
 under the autonomy directive, so they're reviewable after the fact instead of
 just disappearing into the diff.
 
+# Phase 5 — implementation decisions
+
+## Hardening
+
+- **Turnstile is real-but-mock, same pattern as Phase 3c's payment
+  providers.** `lib/turnstile.ts`'s `verifyTurnstile()` is a no-op (always
+  passes) until `TURNSTILE_SECRET_KEY` is set in the environment — genuinely
+  impossible to exercise against the real Cloudflare API without a real site
+  registered there, so it's stubbed per the autonomy directive rather than
+  blocking on it. Wired onto `auth.register` only (the actual bot target —
+  invite-code brute forcing / spam account creation), not on every
+  authenticated action; a Turnstile widget on every forum reply would be
+  bad UX for no real anti-abuse benefit once someone already has an account.
+- **Rate limiting is in-process, fixed-window, keyed by user id (if
+  authenticated) or IP.** Same single-instance caveat as the CMS config
+  cache — correct for this app's actual deploy topology (see
+  `docs/deploy.md`), would need a shared store (Redis) behind a load
+  balancer. Applied to: `auth.login` (10/min/IP), `auth.register` (5/min/IP),
+  `POST /upload` (10/min/user-or-IP), `forum.createThread` (10/min/user),
+  `forum.reply` (20/min/user) — the abuse-prone surfaces named in the brief,
+  not blanket-applied to read endpoints (browsing gallery/map/forum/ranking
+  isn't a meaningful abuse vector and rate-limiting it would only degrade
+  legitimate use).
+- **Validation sweep found one real gap**: `localeOverridesConfigSchema` had
+  no length caps at all (an admin session could write an arbitrarily large
+  blob into `site_content`) — fixed with sane caps (8-char locale keys,
+  128-char override keys, 2000-char values). Everything else audited
+  (`dangerouslySetInnerHTML`, raw SQL string interpolation, `eval`/`Function`
+  construction) came back clean — grepped zero hits across both apps, not
+  just spot-checked. Added max-length caps to the two remaining unbounded
+  admin-only free-text fields (`cms.posts.create`/`cms.pages.upsert` body,
+  20000 chars) as defense-in-depth even though those are admin-gated, not
+  public-facing.
+
+## Deploy prep
+
+- **Dockerfile bug found and fixed by actually building and running the
+  image, not just writing it.** The first version only copied `dist/` into
+  the runtime stage; `drizzle-kit migrate` (run on container boot, before
+  `node dist/index.js`) crashed with `Cannot find module './src/env.js'`
+  because `drizzle.config.ts` reads `./src/env.js` and `./src/db/schema.ts`
+  directly via drizzle-kit's own TS loader — independent of the tsc build
+  output, so `dist/` alone isn't enough. Fixed by also copying `apps/server/
+  src` into the runtime image. Verified end to end: built the image,
+  ran it against the real docker-compose mysql (`--network host`), confirmed
+  the migrate-then-start boot sequence and a live `cms.getConfig` response
+  matching the DB state from earlier in this session's testing.
+
+- **Cross-origin asset URLs are a known, documented limitation, not fixed
+  this phase.** `storage.url(key)` returns a relative `/uploads/...` path
+  (`lib/storage.ts`), which only resolves correctly when the frontend and
+  backend share an origin (reverse-proxied together) or when the frontend
+  is configured to prefix API-origin URLs. `docs/deploy.md` recommends the
+  same-origin reverse-proxy topology as the default specifically to sidestep
+  this — the alternative (rewriting `storage.url()` to emit absolute URLs)
+  is real work that only matters once someone actually deploys frontend and
+  backend to different domains with local disk storage, which the
+  recommended topology avoids needing in the first place.
+- **`VITE_API_BASE_URL` added to the tRPC client** (`lib/trpc.ts`), empty
+  string default (today's same-origin relative `/trpc` behavior, unchanged)
+  so a cross-origin frontend/backend split remains possible without a code
+  change, just an env var — but see the note above about `/uploads` still
+  needing same-origin (or a real object-storage driver) in that topology.
+
 # Phase 4 — implementation decisions
 
 ## Bug found and fixed: /events rendered a stub, not the real page
