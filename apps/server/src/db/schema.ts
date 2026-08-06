@@ -418,3 +418,25 @@ export const chatMessages = mysqlTable('chat_messages', {
 });
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Social graph: writer follows writer. Derived counters (followers count)
+// are computed on read — no denormalized columns to drift.
+// ---------------------------------------------------------------------------
+
+export const follows = mysqlTable(
+  'follows',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    followerId: varchar('follower_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    followedId: varchar('followed_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('follows_unique').on(table.followerId, table.followedId)]
+);
+
+export type Follow = typeof follows.$inferSelect;
