@@ -134,5 +134,19 @@
   "admin_cms_locales_search": "Filtruj klucze...",
   "admin_cms_locales_default": "Domyślna wartość",
   "admin_cms_locales_override": "Nadpisanie",
-  "admin_cms_conflict": "ZMIENIONE OD WCZYTANIA — ODŚWIEŻONO, SPRÓBUJ PONOWNIE"
+  "admin_cms_conflict": "ZMIENIONE OD WCZYTANIA — ODŚWIEŻONO, SPRÓBUJ PONOWNIE",
+  "invites_title": "Moje zaproszenia",
+  "invites_blurb": "Rozdawaj kody writerom, którym ufasz. Każdy kod jest jednorazowy; możesz mieć kilka aktywnych naraz.",
+  "invites_generate": "Generuj kod",
+  "invites_quota_left": "zostało {{left}} / {{quota}} kodów",
+  "invites_quota_staff": "staff — bez limitu",
+  "invites_empty": "Nie masz jeszcze kodów — wygeneruj pierwszy.",
+  "invites_copy": "Kopiuj",
+  "invites_copied": "Skopiowano",
+  "invites_expired": "wygasł",
+  "invites_manage": "Zarządzaj",
+  "admin_invites_title": "Zaproszenia",
+  "admin_invites_uses": "Użycia",
+  "admin_invites_expiry_days": "Wygasa (dni)",
+  "admin_invites_revoke": "Unieważnij"
 }

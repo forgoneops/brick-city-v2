@@ -134,5 +134,19 @@
   "admin_cms_locales_search": "Schlüssel filtern...",
   "admin_cms_locales_default": "Standardwert",
   "admin_cms_locales_override": "Überschreibung",
-  "admin_cms_conflict": "SEIT DEM LADEN GEÄNDERT — NEU GELADEN, ERNEUT VERSUCHEN"
+  "admin_cms_conflict": "SEIT DEM LADEN GEÄNDERT — NEU GELADEN, ERNEUT VERSUCHEN",
+  "invites_title": "Meine Einladungen",
+  "invites_blurb": "Gib Codes an Writer, denen du vertraust. Jeder Code ist einmalig; du kannst mehrere aktive gleichzeitig halten.",
+  "invites_generate": "Code generieren",
+  "invites_quota_left": "{{left}} / {{quota}} Codes übrig",
+  "invites_quota_staff": "Staff — kein Limit",
+  "invites_empty": "Noch keine Codes — generiere deinen ersten.",
+  "invites_copy": "Kopieren",
+  "invites_copied": "Kopiert",
+  "invites_expired": "abgelaufen",
+  "invites_manage": "Verwalten",
+  "admin_invites_title": "Einladungen",
+  "admin_invites_uses": "Nutzungen",
+  "admin_invites_expiry_days": "Läuft ab (Tage)",
+  "admin_invites_revoke": "Widerrufen"
 }

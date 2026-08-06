@@ -134,5 +134,19 @@
   "admin_cms_locales_search": "Filter keys...",
   "admin_cms_locales_default": "Bundled default",
   "admin_cms_locales_override": "Override",
-  "admin_cms_conflict": "CHANGED SINCE LOADED — RELOADED, TRY AGAIN"
+  "admin_cms_conflict": "CHANGED SINCE LOADED — RELOADED, TRY AGAIN",
+  "invites_title": "My invites",
+  "invites_blurb": "Hand codes out to writers you trust. Every code is single-use; you can hold a few active ones at a time.",
+  "invites_generate": "Generate code",
+  "invites_quota_left": "{{left}} / {{quota}} codes left",
+  "invites_quota_staff": "staff — no quota",
+  "invites_empty": "No codes yet — generate your first one.",
+  "invites_copy": "Copy",
+  "invites_copied": "Copied",
+  "invites_expired": "expired",
+  "invites_manage": "Manage",
+  "admin_invites_title": "Invites",
+  "admin_invites_uses": "Uses",
+  "admin_invites_expiry_days": "Expires (days)",
+  "admin_invites_revoke": "Revoke"
 }
