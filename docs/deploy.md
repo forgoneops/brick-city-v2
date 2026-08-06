@@ -133,7 +133,22 @@ was built in doesn't have a `mysqldump` client installed to run the script
 file verbatim end-to-end; see `docs/DECISIONS.md` for what was and wasn't
 directly exercised.
 
-## 5. Legacy v1
+## 5. Ranking season cadence
+
+Season rotation is cron-driven, same shape as the backup job above —
+`npm run season:rotate -w @bcv2/server` (`apps/server/src/rotateSeason.ts`)
+calls `rotateSeasonIfDue()`, which only actually closes the active season
+and opens the next one once it's run for `SEASON_CADENCE_DAYS` (env var,
+default `30`) — safe to run on every tick, a no-op until a season is
+actually due. Manual override (`admin.ranking.closeSeason`) still exists in
+the admin panel for an off-cycle reset.
+
+Cron example (daily at 04:00 UTC, checked well after the 03:00 backup):
+```
+0 4 * * * cd /path/to/repo && DATABASE_URL=... npm run season:rotate -w @bcv2/server >> /var/log/brickcity-season.log 2>&1
+```
+
+## 6. Legacy v1
 
 `legacy/` (`index.html`, `admin.html`) is the frozen single-file v1 site —
 untouched, not part of this app's build or deploy pipeline. Serve it at a
@@ -143,7 +158,7 @@ needs no backend, no env vars, no build step — just serve the two files
 as-is. Don't fold it into the v2 nginx/Caddy config's main routes, to avoid
 any path collision with v2's own routing.
 
-## 6. Anti-bot / rate limiting
+## 7. Anti-bot / rate limiting
 
 Both are real integrations, not fully mocked — see `docs/DECISIONS.md`
 ("Phase 5 — Hardening"):

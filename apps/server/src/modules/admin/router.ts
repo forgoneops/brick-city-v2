@@ -17,7 +17,7 @@ import {
   walletTransactions,
 } from '../../db/schema.js';
 import { ROLES } from '@bcv2/shared';
-import { closeActiveSeasonAndOpenNext, runNightlyRecalc } from '../ranking/scoring.js';
+import { closeActiveSeasonAndOpenNext, rotateSeasonIfDue, runNightlyRecalc } from '../ranking/scoring.js';
 
 export const adminRouter = router({
   // Dashboard counters.
@@ -239,6 +239,20 @@ export const adminRouter = router({
         const season = await closeActiveSeasonAndOpenNext(input.nextName);
         return { id: season.id, name: season.name, startsAt: season.startsAt.toISOString() };
       }),
+
+    // Same rotation the cron script (scripts/rotate-season.ts) calls — safe
+    // to invoke on demand from the admin UI/API to check or force cadence
+    // ahead of the schedule; a no-op response if the current season isn't
+    // due yet.
+    rotateSeasonIfDue: adminProcedure.mutation(async () => {
+      const result = await rotateSeasonIfDue();
+      return {
+        rotated: result.rotated,
+        season: result.season
+          ? { id: result.season.id, name: result.season.name, startsAt: result.season.startsAt.toISOString() }
+          : null,
+      };
+    }),
   }),
 
   subscriptions: router({

@@ -23,6 +23,12 @@ const WEIGHTS = {
   CHECK_IN: 1,
 };
 
+// Season length for the automatic rotation cron (see rotateSeasonIfDue
+// below and src/rotateSeason.ts). Resolves the "ranking season
+// cadence" open item from docs/plan.md — monthly, the value already implied
+// everywhere else in the app (subscription billing period, CMS copy).
+export const SEASON_CADENCE_DAYS = Number(process.env.SEASON_CADENCE_DAYS ?? 30);
+
 async function getActiveSeason(): Promise<Season | null> {
   const db = getDb();
   const [row] = await db.select().from(seasons).where(eq(seasons.isActive, true));
@@ -192,6 +198,28 @@ export async function closeActiveSeasonAndOpenNext(nextName: string): Promise<Se
     await tx.insert(seasons).values(next);
     return next;
   });
+}
+
+// Cron-facing entry point (src/rotateSeason.ts): rotates only when the
+// active season has run for SEASON_CADENCE_DAYS or longer, so calling this
+// on every cron tick (e.g. daily) is safe and idempotent — it's a no-op
+// until a season is actually due. Auto-generated name continues the seed's
+// "Season N" convention rather than a date string, since seasons can also
+// still be closed manually (admin.ranking.closeSeason) with an arbitrary
+// name, and re-deriving "N" from a date would drift from that history.
+export async function rotateSeasonIfDue(): Promise<{ rotated: boolean; season: Season | null }> {
+  const db = getDb();
+  const current = await getActiveSeason();
+  if (!current) {
+    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` }).from(seasons);
+    return { rotated: true, season: await closeActiveSeasonAndOpenNext(`Season ${count + 1}`) };
+  }
+  const dueAt = current.startsAt.getTime() + SEASON_CADENCE_DAYS * 24 * 60 * 60 * 1000;
+  if (Date.now() < dueAt) {
+    return { rotated: false, season: current };
+  }
+  const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` }).from(seasons);
+  return { rotated: true, season: await closeActiveSeasonAndOpenNext(`Season ${count + 1}`) };
 }
 
 export async function scopeKeysFor(scope: 'global' | 'city' | 'category', seasonId: string) {

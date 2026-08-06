@@ -1,3 +1,21 @@
+# Post-launch — ranking season cadence
+
+- **Resolved the "ranking season cadence" open item from `docs/plan.md`:
+  monthly (`SEASON_CADENCE_DAYS`, env-overridable, default 30)** — the value
+  already implied everywhere else in the app (subscription billing period,
+  CMS copy), so it needs no new product decision to pick.
+- **Rotation is a cron-driven script (`apps/server/src/rotateSeason.ts`,
+  `npm run season:rotate -w @bcv2/server`), not an in-process timer** — same
+  single-instance/no-scheduler reasoning as the Phase 3 nightly recalc stub;
+  cron is the actual scheduler in this app's deploy topology (see
+  `docs/deploy.md`). `rotateSeasonIfDue()` only actually closes/opens a
+  season once the active one has run its full cadence, so invoking it on
+  every tick (recommended: daily) is safe and idempotent.
+- **Also exposed as `admin.ranking.rotateSeasonIfDue`** (on-demand check/force
+  from the admin UI/API) alongside the cron script, both calling the same
+  function — manual `admin.ranking.closeSeason` still exists for an
+  off-cycle reset with an arbitrary name.
+
 # Phase 3 — implementation decisions
 
 Non-trivial calls made while building Ranking / Forum / Subscriptions+Wallet
