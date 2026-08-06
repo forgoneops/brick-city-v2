@@ -400,3 +400,21 @@ export type ForumThread = typeof forumThreads.$inferSelect;
 export type ForumReply = typeof forumReplies.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type CmsPageRow = typeof cmsPages.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Live chat: one row per message. `channel` is either a public room key
+// ('wall' | 'spots' | 'battles') or a DM channel 'dm:<uidA>:<uidB>' with the
+// two user ids sorted — membership is enforced in the chat module, not here.
+// ---------------------------------------------------------------------------
+
+export const chatMessages = mysqlTable('chat_messages', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  channel: varchar('channel', { length: 96 }).notNull(),
+  userId: varchar('user_id', { length: 36 })
+    .notNull()
+    .references(() => users.id),
+  body: varchar('body', { length: 500 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
