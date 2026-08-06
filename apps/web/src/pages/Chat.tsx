@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { trpc, getToken } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
@@ -204,7 +205,9 @@ export function Chat() {
               <li key={o.id} className="label-mono flex items-center justify-between px-3 py-2">
                 <span className="text-bone">
                   <span className="mr-2 inline-block h-2 w-2 rounded-full bg-signal" />
-                  {o.nick}
+                  <Link to={`/u/${encodeURIComponent(o.nick)}`} className="hover:text-signal">
+                    {o.nick}
+                  </Link>
                 </span>
                 {o.id !== user.id && (
                   <button className="text-smoke hover:text-signal" onClick={() => openDm(o.id)} aria-label="DM">

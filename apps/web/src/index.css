@@ -159,3 +159,18 @@
     transform: translateX(-50%);
   }
 }
+
+/* NIGHT WALK — late-shift palette: sodium blue night, cold signal.
+   Toggled from the sidebar; applied as <html data-nightwalk="1"> and stored
+   in localStorage ('bcm-nightwalk'). */
+:root[data-nightwalk='1'] {
+  --ink: #05070f;
+  --asphalt: #0a0f1e;
+  --concrete: #0e1526;
+  --fog: #1a2338;
+  --bone: #d8e4f8;
+  --smoke: #5d6b8a;
+  --signal: #6fa8ff;
+  --blood: #8f2d23;
+  --rust: #b0552f;
+}

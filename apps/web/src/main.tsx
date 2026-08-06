@@ -17,6 +17,11 @@ function registerServiceWorker() {
 
 registerServiceWorker();
 
+// Apply the NIGHT WALK palette before first paint (toggled in Layout).
+if (localStorage.getItem('bcm-nightwalk') === '1') {
+  document.documentElement.dataset.nightwalk = '1';
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

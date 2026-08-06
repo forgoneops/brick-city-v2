@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon.js';
 import { PaywallGate } from './PaywallGate.js';
@@ -66,6 +67,32 @@ function LocaleSwitch() {
   );
 }
 
+function NightWalkToggle() {
+  const { t } = useT();
+  const [on, setOn] = useState(() => localStorage.getItem('bcm-nightwalk') === '1');
+  useEffect(() => {
+    if (on) {
+      document.documentElement.dataset.nightwalk = '1';
+      localStorage.setItem('bcm-nightwalk', '1');
+    } else {
+      delete document.documentElement.dataset.nightwalk;
+      localStorage.removeItem('bcm-nightwalk');
+    }
+  }, [on]);
+  return (
+    <button
+      onClick={() => setOn((v) => !v)}
+      aria-label={t('nightwalk_toggle')}
+      className={`flex items-center gap-2 border px-2 py-1 font-mono text-[10px] uppercase tracking-wider ${
+        on ? 'border-signal text-signal' : 'border-transparent text-smoke hover:text-bone'
+      }`}
+    >
+      <Icon name="lantern" size={14} />
+      {t('nightwalk_toggle')}
+    </button>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useT();
   const { config } = useCms();
@@ -124,6 +151,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="flex flex-col gap-3 border-t border-fog px-4 py-4">
           <LocaleSwitch />
+          <NightWalkToggle />
           <Link to="/login" className="btn justify-start">
             <Icon name="mask" size={16} />
             {t('nav_login')}
@@ -138,6 +166,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-3">
           <LocaleSwitch />
+          <NightWalkToggle />
           <Link to="/login" aria-label={t('nav_login')}>
             <Icon name="mask" size={20} className="text-smoke" />
           </Link>

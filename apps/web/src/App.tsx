@@ -13,6 +13,7 @@ import { Login } from './pages/Login.js';
 import { Invite } from './pages/Invite.js';
 import { Invites } from './pages/Invites.js';
 import { Chat } from './pages/Chat.js';
+import { PublicProfile } from './pages/PublicProfile.js';
 import { Admin } from './pages/Admin.js';
 import { AdminCms } from './pages/AdminCms.js';
 import { PublicPage } from './pages/PublicPage.js';
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/invite" element={<Invite />} />
         <Route path="/invites" element={<Invites />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/u/:nick" element={<PublicProfile />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/cms" element={<AdminCms />} />
         <Route path="/pages/:slug" element={<PublicPage />} />
