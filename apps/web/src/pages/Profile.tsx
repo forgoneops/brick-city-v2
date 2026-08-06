@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
@@ -114,6 +115,17 @@ export function Profile() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* My invites */}
+        <section className="border border-fog">
+          <div className="flex items-center justify-between border-b border-fog px-3 py-2">
+            <h2 className="label-mono">{t('invites_title')}</h2>
+            <Link to="/invites" className="btn btn-primary">
+              {t('invites_manage')}
+            </Link>
+          </div>
+          <p className="label-mono px-3 py-3 text-smoke">{t('invites_blurb')}</p>
         </section>
 
         {/* Transaction history */}

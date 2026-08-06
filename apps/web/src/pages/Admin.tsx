@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { trpc } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { Stamp } from '../components/Stamp.js';
+import { AdminInvites } from '../components/AdminInvites.js';
 import { Icon } from '../components/Icon.js';
 import { useT } from '../i18n/index.js';
 import { FEATURES, type FeatureName } from '../config/features.js';
@@ -198,6 +199,8 @@ export function Admin() {
           <Icon name="gate" size={20} />
           <span className="label-mono text-bone">{t('admin_cms_link')}</span>
         </Link>
+
+        <AdminInvites />
 
         {/* Dashboard stats */}
         <section>
