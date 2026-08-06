@@ -162,5 +162,19 @@
   "chat_placeholder": "Write on the wall...",
   "chat_send": "Send",
   "chat_who_online": "ONLINE NOW",
-  "chat_no_dms": "No DMs yet — hit DM next to someone online."
+  "chat_no_dms": "No DMs yet — hit DM next to someone online.",
+  "nightwalk_toggle": "Night walk",
+  "profile_notfound": "NO SUCH WRITER",
+  "profile_photos": "PIECES",
+  "profile_followers": "FOLLOWERS",
+  "profile_following": "FOLLOWING",
+  "profile_follow": "Follow",
+  "profile_unfollow": "Unfollow",
+  "profile_recent": "RECENT PIECES",
+  "badge_og": "OG",
+  "badge_first_paint": "FIRST PAINT",
+  "badge_prolific": "PROLIFIC",
+  "badge_props_magnet": "PROPS MAGNET",
+  "badge_battler": "BATTLER",
+  "badge_crew": "CREW"
 }
