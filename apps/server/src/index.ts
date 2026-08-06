@@ -8,6 +8,7 @@ import { createContext } from './trpc.js';
 import { env } from './env.js';
 import { handleUpload } from './modules/gallery/upload.js';
 import { handleWebhook } from './modules/subscriptions/webhook.js';
+import { attachChatWebSocket } from './modules/chat/ws.js';
 
 const app = new Hono();
 
@@ -15,10 +16,6 @@ app.use(cors({ origin: '*' }));
 
 app.get('/health', (c) => {
   return c.json({ ok: true });
-});
-
-app.get('/version', (c) => {
-  return c.json({ sha: process.env.GIT_SHA ?? 'unknown' });
 });
 
 // Uploaded images (local storage driver).
@@ -45,9 +42,15 @@ app.use(
   })
 );
 
-serve({
+const server = serve({
   fetch: app.fetch,
   port: env.PORT,
-}).addListener('listening', () => {
+});
+
+// Live chat socket on the same port — /ws/chat (see modules/chat/ws.ts).
+// The reverse proxy must forward Upgrade headers for this path.
+attachChatWebSocket(server);
+
+server.addListener('listening', () => {
   console.log(`Server listening on http://localhost:${env.PORT}`);
 });
