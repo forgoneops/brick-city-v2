@@ -245,9 +245,10 @@ export const rankingScores = mysqlTable(
   ]
 );
 
-// Minimal schema so the ranking scoring service has a real points source to
-// read from, even though the battles module itself stays hidden
-// (FEATURES.battles = false). No UI writes to this table yet.
+// Schema so the ranking scoring service has a real points source to read
+// from. Battles is now a live module (see modules/battles/router.ts) —
+// battleId isn't FK'd to battles.id here to avoid an unrelated migration
+// diff on an existing table; voting itself is still a future module.
 export const battleVotes = mysqlTable(
   'battle_votes',
   {
@@ -263,6 +264,46 @@ export const battleVotes = mysqlTable(
   },
   (table) => [uniqueIndex('battle_votes_unique').on(table.battleId, table.voterId)]
 );
+
+// ---------------------------------------------------------------------------
+// Battles module: admin-created contests writers submit one piece to.
+// battleVotes (above) already exists as a scoring input; these two tables
+// are the actual battle + submission records it was always missing.
+// ---------------------------------------------------------------------------
+
+export const battleStatusValues = ['upcoming', 'active', 'closed'] as const;
+
+export const battles = mysqlTable('battles', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  status: mysqlEnum('status', battleStatusValues).notNull().default('upcoming'),
+  closesAt: timestamp('closes_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export type Battle = typeof battles.$inferSelect;
+
+// One submission per user per battle (uniqueIndex below) — createdAt uses
+// fsp:3 to match the precision convention scoring.ts relies on elsewhere
+// (see the Season comment above) in case battle submissions ever feed
+// scoring the way battleVotes does.
+export const battleSubmissions = mysqlTable(
+  'battle_submissions',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    battleId: varchar('battle_id', { length: 36 })
+      .notNull()
+      .references(() => battles.id),
+    userId: varchar('user_id', { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    imageUrl: varchar('image_url', { length: 2048 }).notNull(),
+    createdAt: timestamp('created_at', { fsp: 3 }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('battle_submissions_unique').on(table.battleId, table.userId)]
+);
+
+export type BattleSubmission = typeof battleSubmissions.$inferSelect;
 
 // One credited check-in per user per pin (simple v1 dedupe — not per-day).
 export const checkIns = mysqlTable(
