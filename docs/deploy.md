@@ -171,3 +171,47 @@ Both are real integrations, not fully mocked — see `docs/DECISIONS.md`
   becomes "10/min per instance" in aggregate) rather than global; a shared
   store (Redis) would be needed to make it a true global limit across
   instances. Not needed for a single-VPS deploy.
+
+## 8. Real payment providers (Stripe / Przelewy24 switch-over)
+
+`modules/subscriptions/providers.ts` has real Stripe and Przelewy24 adapters
+sitting behind `getProvider()`'s fail-closed check: each id only resolves to
+its real adapter once **every** one of its env vars is set, otherwise it's
+`MockPaymentProvider` — same as Turnstile's disabled-until-configured pattern
+above. PayPal has no real adapter and stays mock permanently (see
+`docs/DECISIONS.md`).
+
+To go live with a provider:
+
+1. **Set the env vars** in `.env` (see `.env.production.example` for the
+   full list) — either all of a provider's vars or none, there's no partial
+   state:
+   - Stripe: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+   - Przelewy24: `P24_MERCHANT_ID`, `P24_POS_ID`, `P24_CRC`, `P24_API_KEY`
+2. **Register the webhook endpoint** with the provider, pointing at
+   `https://yourdomain.com/webhooks/<provider>`:
+   - Stripe: Dashboard → Developers → Webhooks → Add endpoint, subscribe to
+     `checkout.session.completed`. The endpoint's signing secret is
+     `STRIPE_WEBHOOK_SECRET` above.
+   - Przelewy24: no dashboard registration needed — `urlStatus` is set
+     per-transaction by `createCheckout()` itself, derived from the
+     `returnUrl` the client passes to `subscriptions.topUp`. Same-origin
+     deploy topology (§2 above) is what makes that origin correct.
+3. **Restart the server** (`docker compose up -d --build` picks up new env
+   vars) so `getProvider()` re-evaluates with the new vars present.
+4. **Flip the switch** in the admin panel (Admin → payment providers,
+   `admin.providers.setEnabled`) — this is deliberately a separate step from
+   having valid keys, so a key can be configured and tested (e.g. via
+   `admin.providers.list`/`subscriptions.enabledProviders`, or a manual
+   `getProvider('stripe').createCheckout(...)` smoke test) before it's
+   actually reachable by real users.
+
+Unlike the mock flow (which credits the wallet the instant a checkout is
+"created"), a real checkout returns a `redirectUrl` the browser must actually
+complete payment on — `subscriptions.topUp` does **not** credit the wallet in
+that case; crediting happens later when the provider's webhook fires and
+confirms funds actually moved. The current wallet UI (`Profile.tsx`) doesn't
+yet handle a `redirectUrl` response (it was built against the mock's
+synchronous behavior) — wiring that redirect is frontend follow-up work for
+whenever a provider actually goes live, not done as part of adding the
+adapters themselves.

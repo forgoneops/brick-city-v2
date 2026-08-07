@@ -33,14 +33,19 @@ export const subscriptionsRouter = router({
     };
   }),
 
-  // Top-up: provider stub checkout -> mock completes synchronously -> credit
-  // the wallet ledger. A real /webhooks/:provider route runs the same
-  // creditWallet() path for when real provider keys land (docs/DECISIONS.md).
+  // Top-up: mock provider checkout completes synchronously -> credit the
+  // wallet ledger directly. A real Stripe/P24 checkout instead returns a
+  // redirectUrl the browser must actually complete payment on — crediting
+  // then happens later via POST /webhooks/:provider once the provider
+  // confirms money genuinely moved (see modules/subscriptions/providers.ts
+  // and docs/DECISIONS.md). Crediting here unconditionally would credit an
+  // unpaid checkout the instant the session was created.
   topUp: protectedProcedure
     .input(
       z.object({
         amountCents: z.number().int().positive(),
         provider: z.enum(paymentProviderIdValues),
+        returnUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -52,7 +57,11 @@ export const subscriptionsRouter = router({
       const checkout = await getProvider(input.provider).createCheckout({
         userId: ctx.user.id,
         amountCents: input.amountCents,
+        returnUrl: input.returnUrl,
       });
+      if (checkout.redirectUrl) {
+        return { redirectUrl: checkout.redirectUrl, walletBalanceCents: null };
+      }
       return creditWallet({
         userId: ctx.user.id,
         amountCents: checkout.amountCents,
