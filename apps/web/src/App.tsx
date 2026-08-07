@@ -29,8 +29,6 @@ export default function App() {
         <Route path="/map" element={<Map />} />
         <Route path="/news" element={<News />} />
         <Route path="/events" element={<Events />} />
-        {/* Battles stays in code but is unreachable while the flag is off
-            (flip FEATURES.battles in src/config/features.ts to re-enable) */}
         {FEATURES.battles && <Route path="/battles" element={<Battles />} />}
         <Route path="/forum" element={<Forum />} />
         <Route path="/ranking" element={<Ranking />} />

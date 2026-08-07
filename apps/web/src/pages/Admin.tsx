@@ -4,6 +4,7 @@ import { trpc } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { Stamp } from '../components/Stamp.js';
 import { AdminInvites } from '../components/AdminInvites.js';
+import { AdminBattles } from '../components/AdminBattles.js';
 import { Icon } from '../components/Icon.js';
 import { useT } from '../i18n/index.js';
 import { FEATURES, type FeatureName } from '../config/features.js';
@@ -200,6 +201,8 @@ export function Admin() {
         </Link>
 
         <AdminInvites />
+
+        <AdminBattles />
 
         {/* Dashboard stats */}
         <section>
