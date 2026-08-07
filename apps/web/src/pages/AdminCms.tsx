@@ -56,7 +56,7 @@ function ContentTab({ config, refetch }: TabProps) {
   async function saveAnnouncement() {
     await trpc.cms.setConfig.mutate({
       key: 'announcement',
-      value: { text: announcement.text, enabled: announcement.enabled },
+      value: { text: announcement.text, enabled: announcement.enabled, showAsPopup: announcement.showAsPopup },
       expectedUpdatedAt: config.announcement.updatedAt,
     });
     await refetch();
@@ -135,6 +135,14 @@ function ContentTab({ config, refetch }: TabProps) {
             onChange={(e) => setAnnouncement({ ...announcement, enabled: e.target.checked })}
           />
           {t('admin_cms_announcement_enabled')}
+        </label>
+        <label className="label-mono mb-3 flex items-center gap-2 text-bone">
+          <input
+            type="checkbox"
+            checked={announcement.showAsPopup}
+            onChange={(e) => setAnnouncement({ ...announcement, showAsPopup: e.target.checked })}
+          />
+          {t('admin_cms_announcement_popup')}
         </label>
         <div className="flex items-center gap-3">
           <button className="btn btn-primary" onClick={saveAnnouncement}>
@@ -390,10 +398,7 @@ function CategoriesFlagsTab({ config, refetch }: TabProps) {
         <ul className="divide-y divide-fog border border-fog">
           {Object.entries(flags).map(([key, value]) => (
             <li key={key} className="label-mono flex items-center justify-between px-3 py-2">
-              <span className="text-bone">
-                {key.toUpperCase()}
-                {key === 'battles' && <span className="ml-2 text-fog">(FORCED OFF — see CLAUDE.md)</span>}
-              </span>
+              <span className="text-bone">{key.toUpperCase()}</span>
               <button
                 className={`border px-3 py-1 ${value ? 'border-signal text-signal' : 'border-fog text-smoke'}`}
                 onClick={() => toggleFlag(key)}
@@ -585,12 +590,58 @@ function LocalesTab({ config, refetch }: TabProps) {
   );
 }
 
+function LegalTab({ config, refetch }: TabProps) {
+  const { t } = useT();
+  const [text, setText] = useState(config.legal.text);
+  const [version, setVersion] = useState(config.legal.version);
+  const stamp = useSaveStamp();
+
+  useEffect(() => {
+    setText(config.legal.text);
+    setVersion(config.legal.version);
+  }, [config]);
+
+  async function save() {
+    await trpc.cms.setConfig.mutate({
+      key: 'legal',
+      value: { text, version },
+      expectedUpdatedAt: config.legal.updatedAt,
+    });
+    await refetch();
+    stamp.flash();
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="label-mono text-blood">{t('admin_cms_legal_placeholder_warning')}</p>
+      <label className="label-mono mb-1 block text-smoke">{t('admin_cms_legal_text')}</label>
+      <textarea className="input mb-3 min-h-64" value={text} onChange={(e) => setText(e.target.value)} />
+      <label className="label-mono mb-1 block text-smoke">{t('admin_cms_legal_version')}</label>
+      <input
+        type="number"
+        min={1}
+        className="input mb-3 max-w-xs"
+        value={version}
+        onChange={(e) => setVersion(Math.max(1, Number(e.target.value)))}
+      />
+      <p className="label-mono mb-3 text-smoke">{t('admin_cms_legal_version_hint')}</p>
+      <div className="flex items-center gap-3">
+        <button className="btn btn-primary" onClick={save}>
+          {t('admin_cms_save')}
+        </button>
+        {stamp.saved && <Stamp label={t('admin_cms_saved')} />}
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { key: 'content', labelKey: 'admin_cms_tab_content' },
   { key: 'pages', labelKey: 'admin_cms_tab_pages' },
   { key: 'categories', labelKey: 'admin_cms_tab_categories' },
   { key: 'pricing', labelKey: 'admin_cms_tab_pricing' },
   { key: 'locales', labelKey: 'admin_cms_tab_locales' },
+  { key: 'legal', labelKey: 'admin_cms_tab_legal' },
 ] as const;
 
 export function AdminCms() {
@@ -623,6 +674,7 @@ export function AdminCms() {
           {tab === 'categories' && <CategoriesFlagsTab config={config} refetch={refetch} />}
           {tab === 'pricing' && <PricingTab config={config} refetch={refetch} />}
           {tab === 'locales' && <LocalesTab config={config} refetch={refetch} />}
+          {tab === 'legal' && <LegalTab config={config} refetch={refetch} />}
         </>
       )}
     </ModulePage>

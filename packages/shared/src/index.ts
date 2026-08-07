@@ -101,6 +101,10 @@ export interface HeroConfig {
 export interface AnnouncementConfig {
   text: string;
   enabled: boolean;
+  // Also surface the banner as a one-time dismissible popup on first sight of
+  // this content — see FirstVisitPopups.tsx. Doesn't change the persistent
+  // banner behavior at all, purely an extra nudge.
+  showAsPopup: boolean;
   updatedAt: string | null;
 }
 
@@ -151,6 +155,15 @@ export interface CmsPricingConfig {
   updatedAt: string | null;
 }
 
+// Blocking first-visit terms — real text is an owner-supplied placeholder
+// until sign-off (see docs/DECISIONS.md). `version` is the re-trigger knob:
+// bumping it re-shows the popup to everyone regardless of the text diff size.
+export interface LegalConfig {
+  text: string;
+  version: number;
+  updatedAt: string | null;
+}
+
 export interface CmsConfig {
   hero: HeroConfig;
   announcement: AnnouncementConfig;
@@ -160,6 +173,7 @@ export interface CmsConfig {
   featureFlags: FeatureFlagsConfig;
   localeOverrides: LocaleOverridesConfig;
   pricing: CmsPricingConfig;
+  legal: LegalConfig;
 }
 
 export interface CmsPage {

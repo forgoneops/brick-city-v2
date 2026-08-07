@@ -18,6 +18,7 @@ const KEYS = {
   battleThemes: 'cms_battle_themes',
   featureFlags: 'cms_feature_flags',
   localeOverrides: 'cms_locale_overrides',
+  legal: 'cms_legal',
 } as const;
 
 export type ConfigDomain = keyof typeof KEYS;
@@ -40,6 +41,7 @@ export const heroConfigSchema = z.object({
 export const announcementConfigSchema = z.object({
   text: z.string().max(500),
   enabled: z.boolean(),
+  showAsPopup: z.boolean().default(false),
 });
 
 export const navConfigSchema = z.object({
@@ -70,6 +72,14 @@ export const pricingConfigSchema = z.object({
   paywallEnabled: z.boolean(),
 });
 
+// Blocking first-visit terms popup — see FirstVisitPopups.tsx (web). The
+// real regulamin text is an owner-supplied placeholder until sign-off (see
+// docs/DECISIONS.md); version is bumped to re-trigger the popup for everyone.
+export const legalConfigSchema = z.object({
+  text: z.string().max(20_000),
+  version: z.number().int(),
+});
+
 const SCHEMAS = {
   hero: heroConfigSchema,
   announcement: announcementConfigSchema,
@@ -78,6 +88,7 @@ const SCHEMAS = {
   battleThemes: battleThemesConfigSchema,
   featureFlags: featureFlagsConfigSchema,
   localeOverrides: localeOverridesConfigSchema,
+  legal: legalConfigSchema,
 } as const;
 
 function defaultValue(domain: ConfigDomain): unknown {
@@ -85,7 +96,7 @@ function defaultValue(domain: ConfigDomain): unknown {
     case 'hero':
       return { title: "BRICK CITY\nMASHIN'", subtitle: 'EST. ON CONCRETE', cta: 'Enter the alley' };
     case 'announcement':
-      return { text: '', enabled: false };
+      return { text: '', enabled: false, showAsPopup: false };
     case 'nav':
       return { items: DEFAULT_NAV_ORDER.map((key) => ({ key, visible: true })) };
     case 'galleryCategories':
@@ -96,6 +107,8 @@ function defaultValue(domain: ConfigDomain): unknown {
       return { flags: { battles: true } };
     case 'localeOverrides':
       return { values: { en: {}, pl: {}, de: {} } };
+    case 'legal':
+      return { text: '[PLACEHOLDER — owner to supply final regulamin text]', version: 1 };
   }
 }
 
@@ -154,15 +167,17 @@ export function invalidateCmsCache(): void {
 export async function getCmsConfig(): Promise<CmsConfig> {
   if (cached) return cached;
 
-  const [hero, announcement, nav, galleryCategories, battleThemes, featureFlags, localeOverrides] = await Promise.all([
-    readDomain<{ title: string; subtitle: string; cta: string }>('hero'),
-    readDomain<{ text: string; enabled: boolean }>('announcement'),
-    readDomain<{ items: { key: string; visible: boolean }[] }>('nav'),
-    readDomain<{ items: { category: string; visible: boolean }[] }>('galleryCategories'),
-    readDomain<{ items: string[] }>('battleThemes'),
-    readDomain<{ flags: Record<string, boolean> }>('featureFlags'),
-    readDomain<{ values: Record<string, Record<string, string>> }>('localeOverrides'),
-  ]);
+  const [hero, announcement, nav, galleryCategories, battleThemes, featureFlags, localeOverrides, legal] =
+    await Promise.all([
+      readDomain<{ title: string; subtitle: string; cta: string }>('hero'),
+      readDomain<{ text: string; enabled: boolean; showAsPopup: boolean }>('announcement'),
+      readDomain<{ items: { key: string; visible: boolean }[] }>('nav'),
+      readDomain<{ items: { category: string; visible: boolean }[] }>('galleryCategories'),
+      readDomain<{ items: string[] }>('battleThemes'),
+      readDomain<{ flags: Record<string, boolean> }>('featureFlags'),
+      readDomain<{ values: Record<string, Record<string, string>> }>('localeOverrides'),
+      readDomain<{ text: string; version: number }>('legal'),
+    ]);
 
   const pricingValue = await getPersistedPaywallConfig();
   const db = getDb();
@@ -182,6 +197,7 @@ export async function getCmsConfig(): Promise<CmsConfig> {
     featureFlags: { flags: effectiveFlags, updatedAt: featureFlags.updatedAt },
     localeOverrides: { ...localeOverrides.value, updatedAt: localeOverrides.updatedAt },
     pricing: { ...pricingValue, updatedAt: pricingRow?.updatedAt.toISOString() ?? null },
+    legal: { ...legal.value, updatedAt: legal.updatedAt },
   };
   return cached;
 }

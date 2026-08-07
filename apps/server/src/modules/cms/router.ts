@@ -13,6 +13,7 @@ import {
   getCmsConfig,
   heroConfigSchema,
   invalidateCmsCache,
+  legalConfigSchema,
   localeOverridesConfigSchema,
   navConfigSchema,
   pricingConfigSchema,
@@ -31,6 +32,7 @@ const setConfigInput = z.discriminatedUnion('key', [
   z.object({ key: z.literal('featureFlags'), value: featureFlagsConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
   z.object({ key: z.literal('localeOverrides'), value: localeOverridesConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
   z.object({ key: z.literal('pricing'), value: pricingConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
+  z.object({ key: z.literal('legal'), value: legalConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
 ]);
 
 function serializePost(p: typeof posts.$inferSelect) {

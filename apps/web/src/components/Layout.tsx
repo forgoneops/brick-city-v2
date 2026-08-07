@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon.js';
 import { PaywallGate } from './PaywallGate.js';
+import { FirstVisitPopups } from './FirstVisitPopups.js';
 import { useT, type Locale, LOCALES } from '../i18n/index.js';
 import { useCms } from '../lib/cms.js';
 import { FEATURES } from '../config/features.js';
@@ -115,6 +116,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-ink text-bone">
       <PaywallGate />
+      <FirstVisitPopups />
       {announcement?.enabled && announcement.text && (
         <div className="border-b border-fog bg-concrete px-4 py-2 text-center md:ml-44">
           <p className="label-mono text-bone">
