@@ -5,7 +5,7 @@ import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
 
-const PROVIDERS = ['stripe', 'przelewy24', 'paypal'] as const;
+type ProviderId = 'stripe' | 'przelewy24' | 'paypal';
 const TOP_UP_AMOUNTS = [1000, 2500, 5000];
 
 interface SubStatus {
@@ -25,6 +25,16 @@ interface Transaction {
   createdAt: string;
 }
 
+type PushState = 'loading' | 'unsupported' | 'denied' | 'off' | 'on';
+
+// VAPID public key (base64url) -> Uint8Array for pushManager.subscribe().
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
 export function Profile() {
   const { t } = useT();
   const { user } = useAuth();
@@ -32,23 +42,85 @@ export function Profile() {
   const [status, setStatus] = useState<SubStatus | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showTopUp, setShowTopUp] = useState(false);
-  const [provider, setProvider] = useState<(typeof PROVIDERS)[number]>('stripe');
+  const [enabledProviders, setEnabledProviders] = useState<ProviderId[]>([]);
+  const [provider, setProvider] = useState<ProviderId | null>(null);
+  const [pushState, setPushState] = useState<PushState>('loading');
+  const [vapidKey, setVapidKey] = useState<string | null>(null);
 
   function refresh() {
     trpc.subscriptions.balance.query().then((res) => setBalance(res.walletBalanceCents));
     trpc.subscriptions.myStatus.query().then(setStatus);
     trpc.subscriptions.transactions.query().then((res) => setTransactions(res.items));
+    trpc.subscriptions.enabledProviders.query().then((res) => {
+      const ids = res.providers as ProviderId[];
+      setEnabledProviders(ids);
+      setProvider((current) => (current && ids.includes(current) ? current : (ids[0] ?? null)));
+    });
   }
 
   useEffect(() => {
     if (user) refresh();
   }, [user]);
 
+  // Web Push capability probe: unsupported browser, denied permission, or a
+  // deploy without VAPID keys each map to a distinct toggle state.
+  useEffect(() => {
+    if (!user) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushState('unsupported');
+      return;
+    }
+    trpc.push.vapidPublicKey.query().then((res) => {
+      if (!res.key) {
+        setPushState('unsupported');
+        return;
+      }
+      setVapidKey(res.key);
+      if (Notification.permission === 'denied') {
+        setPushState('denied');
+        return;
+      }
+      navigator.serviceWorker.ready
+        .then((reg) => reg.pushManager.getSubscription())
+        .then((sub) => setPushState(sub ? 'on' : 'off'))
+        .catch(() => setPushState('off'));
+    });
+  }, [user]);
+
   function handleTopUp(amountCents: number) {
+    if (!provider) return;
     trpc.subscriptions.topUp.mutate({ amountCents, provider }).then(() => {
       setShowTopUp(false);
       refresh();
     });
+  }
+
+  async function handlePushToggle() {
+    if (pushState === 'on') {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await trpc.push.unsubscribe.mutate({ endpoint: sub.endpoint }).catch(() => {});
+        await sub.unsubscribe().catch(() => {});
+      }
+      setPushState('off');
+      return;
+    }
+    if (pushState !== 'off' || !vapidKey) return;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      setPushState('denied');
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+    const keys = sub.toJSON().keys;
+    if (!keys) return;
+    await trpc.push.subscribe.mutate({ endpoint: sub.endpoint, p256dh: keys.p256dh, auth: keys.auth });
+    setPushState('on');
   }
 
   if (!user) {
@@ -79,9 +151,11 @@ export function Profile() {
         <section className="border border-fog">
           <div className="flex items-center justify-between border-b border-fog px-3 py-2">
             <h2 className="label-mono">{t('wallet_title')}</h2>
-            <button className="btn btn-primary" onClick={() => setShowTopUp((v) => !v)}>
-              {t('wallet_top_up')}
-            </button>
+            {enabledProviders.length > 0 && (
+              <button className="btn btn-primary" onClick={() => setShowTopUp((v) => !v)}>
+                {t('wallet_top_up')}
+              </button>
+            )}
           </div>
           <div className="px-3 py-4">
             <span className="label-mono block text-smoke">{t('wallet_balance')}</span>
@@ -90,31 +164,59 @@ export function Profile() {
             </span>
           </div>
 
-          {showTopUp && (
-            <div className="border-t border-fog px-3 py-3">
-              <div className="mb-3 flex flex-wrap gap-2">
-                {PROVIDERS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setProvider(p)}
-                    className={`label-mono border px-3 py-1 transition-colors ${
-                      provider === p ? 'border-signal text-signal' : 'border-fog text-smoke hover:text-bone'
-                    }`}
-                  >
-                    {t(`wallet_provider_${p}`)}
-                  </button>
-                ))}
+          {enabledProviders.length === 0 ? (
+            <p className="label-mono border-t border-fog px-3 py-3 text-smoke">{t('wallet_providers_off')}</p>
+          ) : (
+            showTopUp && (
+              <div className="border-t border-fog px-3 py-3">
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {enabledProviders.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setProvider(p)}
+                      className={`label-mono border px-3 py-1 transition-colors ${
+                        provider === p ? 'border-signal text-signal' : 'border-fog text-smoke hover:text-bone'
+                      }`}
+                    >
+                      {t(`wallet_provider_${p}`)}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {TOP_UP_AMOUNTS.map((amount) => (
+                    <button key={amount} className="btn" onClick={() => handleTopUp(amount)}>
+                      +{(amount / 100).toFixed(0)} PLN
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {TOP_UP_AMOUNTS.map((amount) => (
-                  <button key={amount} className="btn" onClick={() => handleTopUp(amount)}>
-                    +{(amount / 100).toFixed(0)} PLN
-                  </button>
-                ))}
-              </div>
-            </div>
+            )
           )}
+        </section>
+
+        {/* Push notifications */}
+        <section className="border border-fog">
+          <div className="flex items-center justify-between border-b border-fog px-3 py-2">
+            <h2 className="label-mono">{t('push_title')}</h2>
+            {(pushState === 'off' || pushState === 'on') && (
+              <button
+                className={pushState === 'on' ? 'btn' : 'btn btn-primary'}
+                onClick={() => void handlePushToggle()}
+              >
+                {pushState === 'on' ? t('push_disable') : t('push_enable')}
+              </button>
+            )}
+          </div>
+          <p className="label-mono px-3 py-3 text-smoke">
+            {pushState === 'on'
+              ? t('push_enabled')
+              : pushState === 'denied'
+                ? t('push_denied')
+                : pushState === 'unsupported'
+                  ? t('push_unsupported')
+                  : t('push_blurb')}
+          </p>
         </section>
 
         {/* My invites */}
