@@ -155,12 +155,15 @@ export interface CmsPricingConfig {
   updatedAt: string | null;
 }
 
-// Blocking first-visit terms — real text is an owner-supplied placeholder
-// until sign-off (see docs/DECISIONS.md). `version` is the re-trigger knob:
-// bumping it re-shows the popup to everyone regardless of the text diff size.
+// Blocking first-visit terms — localized per site locale (en/pl/de), same
+// as every other user-facing string in this app. `version` is the
+// re-trigger knob: bumping it re-shows the popup to everyone, across all
+// three languages at once, regardless of the text diff size.
 export interface LegalConfig {
-  text: string;
   version: number;
+  pl: string;
+  en: string;
+  de: string;
   updatedAt: string | null;
 }
 

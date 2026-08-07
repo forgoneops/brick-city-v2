@@ -72,12 +72,16 @@ export const pricingConfigSchema = z.object({
   paywallEnabled: z.boolean(),
 });
 
-// Blocking first-visit terms popup — see FirstVisitPopups.tsx (web). The
-// real regulamin text is an owner-supplied placeholder until sign-off (see
-// docs/DECISIONS.md); version is bumped to re-trigger the popup for everyone.
+// Blocking first-visit terms popup — see FirstVisitPopups.tsx (web).
+// Localized per site locale (en/pl/de), same as every other user-facing
+// string in this app — a single flat `text` field would mean every visitor
+// sees the same language regardless of their own. `version` is bumped to
+// re-trigger the popup for everyone, across all three languages at once.
 export const legalConfigSchema = z.object({
-  text: z.string().max(20_000),
   version: z.number().int(),
+  pl: z.string().max(20_000),
+  en: z.string().max(20_000),
+  de: z.string().max(20_000),
 });
 
 const SCHEMAS = {
@@ -107,8 +111,10 @@ function defaultValue(domain: ConfigDomain): unknown {
       return { flags: { battles: true } };
     case 'localeOverrides':
       return { values: { en: {}, pl: {}, de: {} } };
-    case 'legal':
-      return { text: '[PLACEHOLDER — owner to supply final regulamin text]', version: 1 };
+    case 'legal': {
+      const placeholder = '[PLACEHOLDER — owner to supply final regulamin text]';
+      return { version: 1, pl: placeholder, en: placeholder, de: placeholder };
+    }
   }
 }
 
@@ -176,7 +182,7 @@ export async function getCmsConfig(): Promise<CmsConfig> {
       readDomain<{ items: string[] }>('battleThemes'),
       readDomain<{ flags: Record<string, boolean> }>('featureFlags'),
       readDomain<{ values: Record<string, Record<string, string>> }>('localeOverrides'),
-      readDomain<{ text: string; version: number }>('legal'),
+      readDomain<{ version: number; pl: string; en: string; de: string }>('legal'),
     ]);
 
   const pricingValue = await getPersistedPaywallConfig();

@@ -1,3 +1,29 @@
+# Post-launch — localize the legal/Terms popup, seed real content
+
+- **Real gap, caught before it shipped wrong**: the `legal` CMS domain landed
+  as a single flat `{ text, version }` field — every visitor would have seen
+  the same language regardless of their own locale, unlike every other
+  user-facing string in this app (which all go through `en/pl/de` i18n or
+  `localeOverrides`). Changed to `{ version, pl, en, de }`.
+- **Old rows written under the flat shape aren't migrated/backfilled** —
+  `readDomain` doesn't run schema validation on read (documented already for
+  `announcement.showAsPopup`'s rollout), so a pre-existing `cms_legal` row
+  from before this change would come back missing `pl`/`en`/`de` entirely.
+  Not a concern for production specifically: no admin session had ever
+  actually saved real content there yet (only the untouched placeholder
+  default), so there was nothing to migrate — confirmed by checking
+  production's actual stored value before writing the real content in this
+  same batch, not assumed.
+- **Fallback locale is `pl`, not `en`**, when the active site locale's field
+  is empty — `pl` is this Service's actual governing-law language (§13 of
+  the real text: "obowiązują przepisy prawa polskiego" / Polish law
+  applies), and the one field guaranteed to be filled in from day one.
+- **Real regulamin/Terms text seeded directly via `setDomainConfig()` inside
+  the running container**, not through the HTTP API with an admin session
+  token — goes through the exact same Zod validation and cache invalidation
+  the admin panel uses, without needing to mint or handle a real credential
+  for a one-off content seed.
+
 # Post-launch — battles module, first-visit popups, real payment adapters
 
 ## Battles module

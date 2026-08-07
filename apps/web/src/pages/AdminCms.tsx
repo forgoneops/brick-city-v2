@@ -590,21 +590,33 @@ function LocalesTab({ config, refetch }: TabProps) {
   );
 }
 
+const LEGAL_LOCALES = ['pl', 'en', 'de'] as const;
+
 function LegalTab({ config, refetch }: TabProps) {
   const { t } = useT();
-  const [text, setText] = useState(config.legal.text);
+  const [pl, setPl] = useState(config.legal.pl);
+  const [en, setEn] = useState(config.legal.en);
+  const [de, setDe] = useState(config.legal.de);
   const [version, setVersion] = useState(config.legal.version);
   const stamp = useSaveStamp();
 
+  const fields: Record<(typeof LEGAL_LOCALES)[number], [string, (v: string) => void]> = {
+    pl: [pl, setPl],
+    en: [en, setEn],
+    de: [de, setDe],
+  };
+
   useEffect(() => {
-    setText(config.legal.text);
+    setPl(config.legal.pl);
+    setEn(config.legal.en);
+    setDe(config.legal.de);
     setVersion(config.legal.version);
   }, [config]);
 
   async function save() {
     await trpc.cms.setConfig.mutate({
       key: 'legal',
-      value: { text, version },
+      value: { pl, en, de, version },
       expectedUpdatedAt: config.legal.updatedAt,
     });
     await refetch();
@@ -614,8 +626,17 @@ function LegalTab({ config, refetch }: TabProps) {
   return (
     <div className="space-y-4">
       <p className="label-mono text-blood">{t('admin_cms_legal_placeholder_warning')}</p>
-      <label className="label-mono mb-1 block text-smoke">{t('admin_cms_legal_text')}</label>
-      <textarea className="input mb-3 min-h-64" value={text} onChange={(e) => setText(e.target.value)} />
+      {LEGAL_LOCALES.map((loc) => {
+        const [value, setValue] = fields[loc];
+        return (
+          <div key={loc}>
+            <label className="label-mono mb-1 block text-smoke">
+              {t('admin_cms_legal_text')} — {loc.toUpperCase()}
+            </label>
+            <textarea className="input mb-3 min-h-64" value={value} onChange={(e) => setValue(e.target.value)} />
+          </div>
+        );
+      })}
       <label className="label-mono mb-1 block text-smoke">{t('admin_cms_legal_version')}</label>
       <input
         type="number"

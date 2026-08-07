@@ -11,7 +11,7 @@ const NEWS_KEY = 'bcm-news-seen-at';
 // bump (legal.version / announcement.updatedAt) rather than a one-time flag,
 // so an owner editing either later re-surfaces just that one popup.
 export function FirstVisitPopups() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const { config } = useCms();
   const [step, setStep] = useState<'legal' | 'news' | null>(null);
 
@@ -47,6 +47,11 @@ export function FirstVisitPopups() {
 
   if (!config) return null;
 
+  // Falls back to `pl` if the active locale's field is empty — not `en`,
+  // since `pl` is this Service's actual governing-law language (§13 of the
+  // real text) and the one guaranteed to be filled in.
+  const legalText = config.legal[locale] || config.legal.pl;
+
   return (
     <>
       <Modal
@@ -59,7 +64,7 @@ export function FirstVisitPopups() {
           </button>
         }
       >
-        {config.legal.text}
+        {legalText}
       </Modal>
 
       <Modal
