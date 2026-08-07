@@ -176,5 +176,13 @@
   "badge_prolific": "PRODUKTIV",
   "badge_props_magnet": "PROPS-MAGNET",
   "badge_battler": "BATTLER",
-  "badge_crew": "CREW"
+  "badge_crew": "CREW",
+  "wallet_providers_off": "AUFLADUNGEN DEAKTIVIERT — DIE CREW HAT ALLE ANBIETER ABGESCHALTET.",
+  "push_title": "BENACHRICHTIGUNGEN",
+  "push_blurb": "Werde benachrichtigt, wenn eine DM eintrifft und du nicht hinschaust.",
+  "push_enable": "Aktivieren",
+  "push_disable": "Deaktivieren",
+  "push_enabled": "AN — DMs finden dich.",
+  "push_denied": "IM BROWSER BLOCKIERT — BENACHRICHTIGUNGEN FÜR DIESE SEITE ERLAUBEN.",
+  "push_unsupported": "AUF DIESEM GERÄT NICHT VERFÜGBAR."
 }

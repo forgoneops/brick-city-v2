@@ -176,5 +176,13 @@
   "badge_prolific": "PROLIFIC",
   "badge_props_magnet": "MAGNET NA PROPSY",
   "badge_battler": "BATTLER",
-  "badge_crew": "EKIPA"
+  "badge_crew": "EKIPA",
+  "wallet_providers_off": "DOŁADOWANIA WYŁĄCZONE — EKIPA ODCIĘŁA WSZYSTKICH OPERATORÓW.",
+  "push_title": "POWIADOMIENIA",
+  "push_blurb": "Dostaniesz sygnał, gdy przyjdzie PW, a Ty nie patrzysz.",
+  "push_enable": "Włącz",
+  "push_disable": "Wyłącz",
+  "push_enabled": "WŁĄCZONE — PW Cię znajdzie.",
+  "push_denied": "ZABLOKOWANE W PRZEGLĄDARCE — ZEZWÓL NA POWIADOMIENIA DLA TEJ STRONY.",
+  "push_unsupported": "NIEDOSTĘPNE NA TYM URZĄDZENIU."
 }

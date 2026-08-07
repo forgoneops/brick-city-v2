@@ -176,5 +176,13 @@
   "badge_prolific": "PROLIFIC",
   "badge_props_magnet": "PROPS MAGNET",
   "badge_battler": "BATTLER",
-  "badge_crew": "CREW"
+  "badge_crew": "CREW",
+  "wallet_providers_off": "TOP-UPS ARE OFF RIGHT NOW — THE CREW DISABLED ALL PROVIDERS.",
+  "push_title": "NOTIFICATIONS",
+  "push_blurb": "Get pinged when a DM lands and you're not looking.",
+  "push_enable": "Enable",
+  "push_disable": "Disable",
+  "push_enabled": "ON — DMs will find you.",
+  "push_denied": "BLOCKED IN THE BROWSER — ALLOW NOTIFICATIONS FOR THIS SITE.",
+  "push_unsupported": "NOT AVAILABLE ON THIS DEVICE."
 }
