@@ -440,3 +440,22 @@ export const follows = mysqlTable(
 );
 
 export type Follow = typeof follows.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Web Push subscriptions — one row per browser endpoint registered by a
+// signed-in writer. VAPID keys live in env vars on the deploy target,
+// never in the DB or the repo.
+// ---------------------------------------------------------------------------
+
+export const pushSubscriptions = mysqlTable('push_subscriptions', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 })
+    .notNull()
+    .references(() => users.id),
+  endpoint: varchar('endpoint', { length: 512 }).notNull().unique(),
+  p256dh: varchar('p256dh', { length: 255 }).notNull(),
+  auth: varchar('auth', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
