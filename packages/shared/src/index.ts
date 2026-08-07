@@ -167,6 +167,13 @@ export interface LegalConfig {
   updatedAt: string | null;
 }
 
+// Gates whether auth.register requires a valid invite code — see
+// modules/auth/router.ts and docs/DECISIONS.md. Defaults to true.
+export interface RegistrationConfig {
+  inviteOnly: boolean;
+  updatedAt: string | null;
+}
+
 export interface CmsConfig {
   hero: HeroConfig;
   announcement: AnnouncementConfig;
@@ -177,6 +184,7 @@ export interface CmsConfig {
   localeOverrides: LocaleOverridesConfig;
   pricing: CmsPricingConfig;
   legal: LegalConfig;
+  registration: RegistrationConfig;
 }
 
 export interface CmsPage {

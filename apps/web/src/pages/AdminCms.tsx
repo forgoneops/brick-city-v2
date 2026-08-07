@@ -33,14 +33,17 @@ function ContentTab({ config, refetch }: TabProps) {
   const [hero, setHero] = useState(config.hero);
   const [announcement, setAnnouncement] = useState(config.announcement);
   const [nav, setNav] = useState<NavItemConfig[]>(config.nav.items);
+  const [registration, setRegistration] = useState(config.registration);
   const heroStamp = useSaveStamp();
   const announcementStamp = useSaveStamp();
   const navStamp = useSaveStamp();
+  const registrationStamp = useSaveStamp();
 
   useEffect(() => {
     setHero(config.hero);
     setAnnouncement(config.announcement);
     setNav(config.nav.items);
+    setRegistration(config.registration);
   }, [config]);
 
   async function saveHero() {
@@ -79,6 +82,16 @@ function ContentTab({ config, refetch }: TabProps) {
     await trpc.cms.setConfig.mutate({ key: 'nav', value: { items: nav }, expectedUpdatedAt: config.nav.updatedAt });
     await refetch();
     navStamp.flash();
+  }
+
+  async function saveRegistration() {
+    await trpc.cms.setConfig.mutate({
+      key: 'registration',
+      value: { inviteOnly: registration.inviteOnly },
+      expectedUpdatedAt: config.registration.updatedAt,
+    });
+    await refetch();
+    registrationStamp.flash();
   }
 
   return (
@@ -177,6 +190,24 @@ function ContentTab({ config, refetch }: TabProps) {
             {t('admin_cms_save')}
           </button>
           {navStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+        </div>
+      </section>
+
+      <section className="border-t border-fog pt-6">
+        <h3 className="label-mono mb-3">{t('admin_cms_registration_title')}</h3>
+        <label className="label-mono mb-3 flex items-center gap-2 text-bone">
+          <input
+            type="checkbox"
+            checked={registration.inviteOnly}
+            onChange={(e) => setRegistration({ ...registration, inviteOnly: e.target.checked })}
+          />
+          {t('admin_cms_registration_invite_only')}
+        </label>
+        <div className="flex items-center gap-3">
+          <button className="btn btn-primary" onClick={saveRegistration}>
+            {t('admin_cms_save')}
+          </button>
+          {registrationStamp.saved && <Stamp label={t('admin_cms_saved')} />}
         </div>
       </section>
     </div>

@@ -40,6 +40,7 @@
   "login_password": "Password",
   "invite_title": "Invite-only registration",
   "invite_code": "Invite code",
+  "invite_code_optional": "OPTIONAL — REGISTRATION IS OPEN RIGHT NOW",
   "invite_email": "Email",
   "invite_nick": "Nick",
   "invite_password": "Password",
@@ -212,5 +213,7 @@
   "admin_cms_legal_placeholder_warning": "PLACEHOLDER TEXT — NEEDS OWNER SIGN-OFF BEFORE THIS IS REAL.",
   "admin_cms_legal_text": "Terms / Regulamin text",
   "admin_cms_legal_version": "Version",
-  "admin_cms_legal_version_hint": "Bump this to re-show the popup to everyone, even for a small text change."
+  "admin_cms_legal_version_hint": "Bump this to re-show the popup to everyone, even for a small text change.",
+  "admin_cms_registration_title": "Registration",
+  "admin_cms_registration_invite_only": "Invite-only registration"
 }

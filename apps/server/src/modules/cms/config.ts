@@ -19,6 +19,7 @@ const KEYS = {
   featureFlags: 'cms_feature_flags',
   localeOverrides: 'cms_locale_overrides',
   legal: 'cms_legal',
+  registration: 'cms_registration',
 } as const;
 
 export type ConfigDomain = keyof typeof KEYS;
@@ -84,6 +85,13 @@ export const legalConfigSchema = z.object({
   de: z.string().max(20_000),
 });
 
+// Gates whether auth.register requires a valid invite code. Defaults to
+// true (see defaultValue below) so adding this toggle is zero behavior
+// change until an admin explicitly flips it — see modules/auth/router.ts.
+export const registrationConfigSchema = z.object({
+  inviteOnly: z.boolean(),
+});
+
 const SCHEMAS = {
   hero: heroConfigSchema,
   announcement: announcementConfigSchema,
@@ -93,6 +101,7 @@ const SCHEMAS = {
   featureFlags: featureFlagsConfigSchema,
   localeOverrides: localeOverridesConfigSchema,
   legal: legalConfigSchema,
+  registration: registrationConfigSchema,
 } as const;
 
 function defaultValue(domain: ConfigDomain): unknown {
@@ -115,6 +124,8 @@ function defaultValue(domain: ConfigDomain): unknown {
       const placeholder = '[PLACEHOLDER — owner to supply final regulamin text]';
       return { version: 1, pl: placeholder, en: placeholder, de: placeholder };
     }
+    case 'registration':
+      return { inviteOnly: true };
   }
 }
 
@@ -173,7 +184,7 @@ export function invalidateCmsCache(): void {
 export async function getCmsConfig(): Promise<CmsConfig> {
   if (cached) return cached;
 
-  const [hero, announcement, nav, galleryCategories, battleThemes, featureFlags, localeOverrides, legal] =
+  const [hero, announcement, nav, galleryCategories, battleThemes, featureFlags, localeOverrides, legal, registration] =
     await Promise.all([
       readDomain<{ title: string; subtitle: string; cta: string }>('hero'),
       readDomain<{ text: string; enabled: boolean; showAsPopup: boolean }>('announcement'),
@@ -183,6 +194,7 @@ export async function getCmsConfig(): Promise<CmsConfig> {
       readDomain<{ flags: Record<string, boolean> }>('featureFlags'),
       readDomain<{ values: Record<string, Record<string, string>> }>('localeOverrides'),
       readDomain<{ version: number; pl: string; en: string; de: string }>('legal'),
+      readDomain<{ inviteOnly: boolean }>('registration'),
     ]);
 
   const pricingValue = await getPersistedPaywallConfig();
@@ -204,6 +216,7 @@ export async function getCmsConfig(): Promise<CmsConfig> {
     localeOverrides: { ...localeOverrides.value, updatedAt: localeOverrides.updatedAt },
     pricing: { ...pricingValue, updatedAt: pricingRow?.updatedAt.toISOString() ?? null },
     legal: { ...legal.value, updatedAt: legal.updatedAt },
+    registration: { ...registration.value, updatedAt: registration.updatedAt },
   };
   return cached;
 }

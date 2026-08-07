@@ -40,6 +40,7 @@
   "login_password": "Hasło",
   "invite_title": "Rejestracja tylko na zaproszenie",
   "invite_code": "Kod zaproszenia",
+  "invite_code_optional": "OPCJONALNE — REJESTRACJA JEST TERAZ OTWARTA",
   "invite_email": "Email",
   "invite_nick": "Nick",
   "invite_password": "Hasło",
@@ -212,5 +213,7 @@
   "admin_cms_legal_placeholder_warning": "TEKST TYMCZASOWY — WYMAGA ZATWIERDZENIA PRZEZ WŁAŚCICIELA PRZED PUBLIKACJĄ.",
   "admin_cms_legal_text": "Tekst regulaminu",
   "admin_cms_legal_version": "Wersja",
-  "admin_cms_legal_version_hint": "Zwiększ, żeby pokazać popup wszystkim ponownie, nawet przy drobnej zmianie tekstu."
+  "admin_cms_legal_version_hint": "Zwiększ, żeby pokazać popup wszystkim ponownie, nawet przy drobnej zmianie tekstu.",
+  "admin_cms_registration_title": "Rejestracja",
+  "admin_cms_registration_invite_only": "Rejestracja tylko na zaproszenia"
 }

@@ -2,11 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
+import { useCms } from '../lib/cms.js';
 import { TurnstileWidget } from '../components/TurnstileWidget.js';
 
 export function Invite() {
   const { t } = useT();
   const { register } = useAuth();
+  const { config } = useCms();
+  // Defaults to true (matches the server's own default) while config is
+  // still loading, so the field never flashes optional-then-required.
+  const inviteOnly = config?.registration.inviteOnly ?? true;
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
@@ -21,7 +26,7 @@ export function Invite() {
     setError(null);
     setLoading(true);
     try {
-      await register(email, nick, password, code, turnstileToken);
+      await register(email, nick, password, code.trim() || undefined, turnstileToken);
       navigate('/');
     } catch {
       setError('REGISTRATION FAILED');
@@ -48,8 +53,9 @@ export function Invite() {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="————"
           className="input caret-signal border-0 border-b border-fog bg-transparent px-0 py-3 text-center font-mono text-lg uppercase tracking-[0.3em] focus:border-signal"
-          required
+          required={inviteOnly}
         />
+        {!inviteOnly && <p className="label-mono mt-1 text-center text-smoke">{t('invite_code_optional')}</p>}
 
         <label htmlFor="invite-email" className="sr-only">
           {t('invite_email')}

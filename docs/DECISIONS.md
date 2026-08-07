@@ -1,3 +1,32 @@
+# Post-launch — invite-only registration toggle, logo texture pass
+
+## Registration: admin-togglable invite-only
+
+- **Whether an invite is required is decided by presence, not by a second
+  branch on `inviteOnly`.** `auth.register` only rejects up front when
+  `inviteOnly && !input.inviteCode`; if a code IS provided, it's always
+  validated and redeemed, in both invite-only and open modes. This is what
+  makes "open mode still honors a provided code" fall out for free instead
+  of needing its own branch — one `if (input.inviteCode)` guards the whole
+  lookup/validate/redeem block, and one `if (invite)` guards the
+  usedCount-increment/redemption-row block at the end.
+- **New `registration` CMS domain defaults to `{ inviteOnly: true }`** — the
+  toggle itself ships with zero behavior change until an admin opens it,
+  same convention as `announcement.showAsPopup`'s rollout.
+- **Frontend sends `undefined`, not `""`, for an omitted code.** The server
+  schema is `z.string().min(1).optional()` — an empty string would still
+  fail the inner `.min(1)`. `Invite.tsx` sends `code.trim() || undefined`.
+
+## Logo: street-texture pass (2nd revision)
+
+- Same file-integrity discipline as the first replacement: verified via
+  Python's `xml.dom.minidom` (no `xmllint` on this box) and a real headless-
+  browser screenshot at 375px mobile width, not just the isolated SVG —
+  confirmed the added texture (irregular plate edges, spray-mist dots, a
+  slightly offset ghost layer under the B, one small drip) stays subtle
+  enough at header size (~28px) not to compromise legibility, which was
+  the whole reason the previous mark got replaced.
+
 # Post-launch — localize the legal/Terms popup, seed real content
 
 - **Real gap, caught before it shipped wrong**: the `legal` CMS domain landed

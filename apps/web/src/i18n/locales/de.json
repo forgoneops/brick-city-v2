@@ -40,6 +40,7 @@
   "login_password": "Passwort",
   "invite_title": "Registrierung nur auf Einladung",
   "invite_code": "Einladungscode",
+  "invite_code_optional": "OPTIONAL — REGISTRIERUNG IST GERADE OFFEN",
   "invite_email": "Email",
   "invite_nick": "Nick",
   "invite_password": "Passwort",
@@ -212,5 +213,7 @@
   "admin_cms_legal_placeholder_warning": "PLATZHALTERTEXT — BENÖTIGT FREIGABE DES INHABERS, BEVOR DAS ECHT IST.",
   "admin_cms_legal_text": "AGB / Regulamin-Text",
   "admin_cms_legal_version": "Version",
-  "admin_cms_legal_version_hint": "Erhöhen, um den Popup allen erneut zu zeigen, auch bei einer kleinen Textänderung."
+  "admin_cms_legal_version_hint": "Erhöhen, um den Popup allen erneut zu zeigen, auch bei einer kleinen Textänderung.",
+  "admin_cms_registration_title": "Registrierung",
+  "admin_cms_registration_invite_only": "Registrierung nur auf Einladung"
 }

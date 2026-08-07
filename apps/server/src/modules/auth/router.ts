@@ -6,6 +6,7 @@ import { users, invites, inviteRedemptions, subscriptions } from '../../db/schem
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { signSessionToken } from '../../lib/jwt.js';
 import { verifyTurnstile } from '../../lib/turnstile.js';
+import { getCmsConfig } from '../cms/config.js';
 import { eq, sql } from 'drizzle-orm';
 import { DEFAULT_PRICE_PLN, TRIAL_DAYS, type PublicUser } from '@bcv2/shared';
 import { randomUUID } from 'node:crypto';
@@ -34,7 +35,7 @@ export const authRouter = router({
         email: z.string().email(),
         nick: z.string().min(2).max(32),
         password: z.string().min(8),
-        inviteCode: z.string().min(1),
+        inviteCode: z.string().min(1).optional(),
         turnstileToken: z.string().optional(),
       })
     )
@@ -44,23 +45,35 @@ export const authRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Bot check failed' });
       }
 
+      // inviteOnly defaults to true (see modules/cms/config.ts) — an admin
+      // can open registration from the CMS without a code change. Providing
+      // a code is still honored (validated + redeemed) even when open, so
+      // referral/invite-count tracking keeps working either way.
+      const { inviteOnly } = (await getCmsConfig()).registration;
+      if (inviteOnly && !input.inviteCode) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invite code required' });
+      }
+
       const db = getDb();
 
       return await db.transaction(async (tx) => {
-        const [invite] = await tx
-          .select()
-          .from(invites)
-          .where(eq(invites.code, input.inviteCode))
-          .for('update');
+        let invite: typeof invites.$inferSelect | undefined;
+        if (input.inviteCode) {
+          [invite] = await tx
+            .select()
+            .from(invites)
+            .where(eq(invites.code, input.inviteCode))
+            .for('update');
 
-        if (!invite) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid invite code' });
-        }
-        if (invite.usedCount >= invite.maxUses) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invite code exhausted' });
-        }
-        if (invite.expiresAt && invite.expiresAt < new Date()) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invite code expired' });
+          if (!invite) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid invite code' });
+          }
+          if (invite.usedCount >= invite.maxUses) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invite code exhausted' });
+          }
+          if (invite.expiresAt && invite.expiresAt < new Date()) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invite code expired' });
+          }
         }
 
         const existing = await tx
@@ -94,16 +107,18 @@ export const authRouter = router({
           priceCents: DEFAULT_PRICE_PLN * 100,
         });
 
-        await tx
-          .update(invites)
-          .set({ usedCount: sql`${invites.usedCount} + 1` })
-          .where(eq(invites.id, invite.id));
+        if (invite) {
+          await tx
+            .update(invites)
+            .set({ usedCount: sql`${invites.usedCount} + 1` })
+            .where(eq(invites.id, invite.id));
 
-        await tx.insert(inviteRedemptions).values({
-          id: randomUUID(),
-          inviteId: invite.id,
-          userId,
-        });
+          await tx.insert(inviteRedemptions).values({
+            id: randomUUID(),
+            inviteId: invite.id,
+            userId,
+          });
+        }
 
         const [created] = await tx.select().from(users).where(eq(users.id, userId));
         const token = await signSessionToken({ sub: created.id, role: created.role });
