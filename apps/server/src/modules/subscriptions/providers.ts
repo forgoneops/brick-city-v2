@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { paymentProviderIdValues } from '../../db/schema.js';
+import { eq } from 'drizzle-orm';
+import { getDb } from '../../db/index.js';
+import { paymentProviderIdValues, paymentProviders } from '../../db/schema.js';
 
 export type PaymentProviderId = (typeof paymentProviderIdValues)[number];
 
@@ -56,4 +58,33 @@ export function getProvider(id: PaymentProviderId): PaymentProvider {
     instances.set(id, provider);
   }
   return provider;
+}
+
+// ---------------------------------------------------------------------------
+// On/off switch state (payment_providers table). The table starts empty — a
+// missing row means DISABLED, so the admin panel can render all three known
+// providers even before the first toggle is ever saved.
+// ---------------------------------------------------------------------------
+
+export interface ProviderState {
+  id: PaymentProviderId;
+  enabled: boolean;
+}
+
+export async function listProviderStates(): Promise<ProviderState[]> {
+  const db = getDb();
+  const rows = await db.select().from(paymentProviders);
+  const stateById = new Map(rows.map((r) => [r.id, r.enabled]));
+  return paymentProviderIdValues.map((id) => ({ id, enabled: stateById.get(id) ?? false }));
+}
+
+export async function listEnabledProviderIds(): Promise<PaymentProviderId[]> {
+  const states = await listProviderStates();
+  return states.filter((s) => s.enabled).map((s) => s.id);
+}
+
+export async function isProviderEnabled(id: PaymentProviderId): Promise<boolean> {
+  const db = getDb();
+  const [row] = await db.select().from(paymentProviders).where(eq(paymentProviders.id, id));
+  return row?.enabled ?? false;
 }

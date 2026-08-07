@@ -6,7 +6,8 @@ import { getDb } from '../../db/index.js';
 import { paymentProviderIdValues, subscriptions, users, walletTransactions } from '../../db/schema.js';
 import { getPersistedPaywallConfig, setPersistedPaywallConfig } from './access.js';
 import { creditWallet } from './ledger.js';
-import { getProvider } from './providers.js';
+import { getProvider, isProviderEnabled, listEnabledProviderIds } from './providers.js';
+import { TRPCError } from '@trpc/server';
 
 const PAGE_SIZE = 20;
 
@@ -43,6 +44,11 @@ export const subscriptionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // The admin panel's provider switch is authoritative: a disabled
+      // provider rejects top-ups here, not just hides in the UI.
+      if (!(await isProviderEnabled(input.provider))) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'provider-disabled' });
+      }
       const checkout = await getProvider(input.provider).createCheckout({
         userId: ctx.user.id,
         amountCents: input.amountCents,
@@ -99,6 +105,12 @@ export const subscriptionsRouter = router({
   paywallStatus: publicProcedure.query(async () => {
     const config = await getPersistedPaywallConfig();
     return { paywallEnabled: config.paywallEnabled };
+  }),
+
+  // Which providers the wallet UI may offer for top-ups. Public (no secrets
+  // — just ids), mirrors the admin panel's on/off switches.
+  enabledProviders: publicProcedure.query(async () => {
+    return { providers: await listEnabledProviderIds() };
   }),
 
   getPaywallConfig: adminProcedure.query(async () => {

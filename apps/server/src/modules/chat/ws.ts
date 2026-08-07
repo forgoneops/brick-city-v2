@@ -7,6 +7,7 @@ import { getDb } from '../../db/index.js';
 import { chatMessages, users } from '../../db/schema.js';
 import { verifySessionToken } from '../../lib/jwt.js';
 import { checkRateLimit } from '../../lib/rateLimit.js';
+import { sendPushToUser } from '../push/notify.js';
 
 // Live chat over a single WebSocket endpoint (/ws/chat?token=<jwt>&channel=<key>).
 // Public rooms: 'wall' | 'spots' | 'battles'. DMs: 'dm:<uidA>:<uidB>' with the
@@ -140,6 +141,20 @@ export function attachChatWebSocket(server: UpgradeCapableServer): void {
           body,
           createdAt: createdAt.toISOString(),
         });
+
+        // DM received while the other writer is offline (or in another
+        // channel) -> Web Push. Fire-and-forget: a push failure must never
+        // break the chat path.
+        if (client.channel.startsWith('dm:')) {
+          const otherId = client.channel.split(':').slice(1).find((uid) => uid !== client.userId);
+          if (otherId) {
+            void sendPushToUser(otherId, {
+              title: client.nick,
+              body: body.slice(0, 120),
+              url: '/chat',
+            }).catch(() => {});
+          }
+        }
       })();
     });
 
