@@ -88,7 +88,6 @@ interface WalletTx {
 interface Provider {
   id: string;
   enabled: boolean;
-  keyPlaceholder: string;
 }
 
 export function Admin() {
