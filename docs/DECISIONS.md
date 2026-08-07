@@ -1,3 +1,121 @@
+# Post-launch — battles module, first-visit popups, real payment adapters
+
+## Battles module
+
+- **`battleVotes.battleId` was left without a FK to the new `battles` table.**
+  It's an existing column on an existing table; adding a FK there would be an
+  unrelated migration hunk mixed into this batch's diff. Voting itself is
+  still a future module — nothing writes to `battleVotes` yet either way.
+- **`battles.list` is the only list query — no separate admin-only variant.**
+  It's a `publicProcedure` with an optional status filter; the admin panel
+  calls it with no filter to see everything (including `closed`), so there's
+  one query to keep correct instead of two.
+- **Battle submission reuses the existing gallery `/upload` HTTP endpoint**
+  rather than a parallel upload pipeline — `battles.submit` only ever needs
+  the `imageUrl` it returns. Side effect: a battle submission also creates a
+  `photos` row (upload's own behavior, unconditional) — treated as
+  acceptable/likely-desired (a battle piece is a real piece, reasonable for
+  it to also appear in the public gallery), not something this module tries
+  to suppress.
+- **`battles.submit` is `activeAccessProcedure`** (paywall-gated), matching
+  `map.submit`/`forum.createThread` — consistent with "content creation
+  endpoints are gated, browsing isn't."
+- **Fixed two stale UI artifacts found while touching this area**: `AdminCms.tsx`
+  still displayed "(FORCED OFF — see CLAUDE.md)" next to the `battles` feature
+  flag, and `App.tsx` had a comment claiming the battles route was
+  code-only/unreachable — both predate the battles launch commit and were
+  never cleaned up. Removed; no behavior change.
+- **Found and fixed during verification, not just written and assumed**: the
+  CONFLICT-on-duplicate-submission check initially read `err.code ===
+  'ER_DUP_ENTRY'` directly on the caught error, which never matched — a real
+  duplicate submit came back as a raw 500, not 409. drizzle-orm wraps the
+  actual mysql2 driver error in its own `DrizzleQueryError`, with the
+  original (carrying `.code`) attached as `.cause`, not merged onto the
+  thrown error itself. Fixed to check `err.cause?.code`; re-verified live
+  (duplicate submit now correctly 409s) rather than trusting the fix without
+  re-running the failing case.
+
+## First-visit popups (Terms then News)
+
+- **New `Modal` component has no backdrop-click, Escape, or built-in close
+  icon** — every instance supplies its own `footer` with explicit action
+  button(s). This makes "blocking" the *default* for a modal with no
+  dismiss action in its footer (the Terms popup), rather than a flag that
+  has to be remembered and threaded through — can't forget to make it
+  non-dismissible, there's just no path to dismiss unless you add one.
+- **`showAsPopup` extends the existing `announcement` CMS domain** instead of
+  a new domain — the popup is explicitly "the same content, shown once as a
+  nudge," not independent content, so one source of truth for the text.
+- **Re-trigger keys are content-addressed, not a single "seen it" flag**:
+  `localStorage['bcm-legal-accepted-version']` stores the accepted
+  `legal.version` int; `localStorage['bcm-news-seen-at']` stores the last-seen
+  `announcement.updatedAt` ISO string. Editing either later (bumping version,
+  or re-saving the announcement) re-surfaces exactly that popup for everyone,
+  with no server-side "who's seen what" tracking needed.
+- **⚠️ `legal.text` default is a literal placeholder
+  (`[PLACEHOLDER — owner to supply final regulamin text]`), shipped
+  deliberately** per the brief — do not treat this as real terms text. Every
+  visitor currently accepts a placeholder. Needs the site owner's real
+  regulamin text and explicit sign-off before this is a real legal gate;
+  flagged again in the deploy report.
+
+## Real payment provider adapters (Stripe + Przelewy24), keys deferred
+
+- **Przelewy24 client is `@mrboombastic/node-przelewy24`** (actively
+  maintained, TypeScript-native, MIT) rather than a hand-rolled REST client —
+  verified for real before depending on it: pulled the actual published
+  tarball and read its compiled `.d.ts` (not just the README) to confirm
+  `P24.createTransaction`/`verifyNotification`/`verifyTransaction`/
+  `getTransaction` and the exact `Order`/`NotificationRequest`/`Verification`
+  field shapes, rather than inventing endpoint behavior.
+- **Found and fixed a real bug this batch's own premise would otherwise
+  have shipped**: `subscriptions.topUp` unconditionally called
+  `creditWallet()` right after `createCheckout()` for every provider,
+  mock or real. That's correct for the mock (nothing to wait for) but is a
+  genuine over-crediting bug for a real provider — a Stripe/P24 checkout
+  session existing means nothing about payment has happened yet. Fixed by
+  having `createCheckout()` return an optional `redirectUrl`; when present,
+  `topUp` returns it to the caller instead of crediting, and crediting only
+  ever happens from the webhook path once the provider actually confirms
+  funds moved. Since neither real provider has keys or an enabled switch
+  yet, this path is unreachable today — but "code-ready" has to mean
+  actually safe the moment it's switched on, not just present.
+- **`userId` round-trips through the webhook two different ways**, matched
+  to what each provider actually supports: Stripe Checkout Sessions have a
+  real `metadata` field, so `{ userId }` goes there directly. P24's
+  `Order`/`NotificationRequest` have no free-form metadata field at all —
+  `sessionId` is entirely ours to choose, so the userId is encoded into it
+  (`topup_<userId>_<uuid>`) and parsed back out on the webhook. No new DB
+  table for a pending-checkout mapping either way.
+- **P24's `Order.email` is required but `createCheckout()`'s params aren't**
+  (matching the existing `PaymentProvider` interface, unchanged) — the P24
+  adapter looks the user's email up from `users` by `userId` internally
+  rather than widening the shared interface for one provider's requirement.
+- **`returnUrl` is a new optional client-supplied field on `topUp`**, not a
+  new env var — Stripe/P24 both need an absolute success/return URL, and the
+  brief's env var list is closed to exactly six vars. The browser is the
+  only party that reliably knows its own origin, so it's threaded through
+  from the client at call time instead; the currently-reachable mock path
+  ignores it entirely, so this is a no-op change for anything live today.
+- **PayPal's env-var placeholders were removed, not migrated** — the old
+  `.env.production.example` had commented-out `PAYPAL_CLIENT_ID`/
+  `PAYPAL_CLIENT_SECRET` stubs from Phase 3c. Since PayPal has no real
+  adapter and stays mock permanently by explicit instruction, keeping
+  placeholders for env vars nothing will ever read would be actively
+  misleading.
+- **Old `PRZELEWY24_MERCHANT_ID`/`PRZELEWY24_API_KEY` placeholder names were
+  replaced with `P24_MERCHANT_ID`/`P24_POS_ID`/`P24_CRC`/`P24_API_KEY`**
+  (per the brief's exact env var list) — the old names were never read by
+  any code, so this is a pure rename, not a breaking change to a working
+  config.
+- **Frontend redirect handling is explicitly not part of this batch.**
+  `Profile.tsx`'s top-up flow still assumes the mock's synchronous
+  `{walletBalanceCents}` response; it doesn't yet branch on a `redirectUrl`
+  response. Documented in `docs/deploy.md`'s switch-over procedure as
+  follow-up work for whenever a provider is actually about to go live —
+  building a real payment redirect UI against providers with no keys yet
+  would be speculative work with nothing real to test it against.
+
 # Post-launch — ranking season cadence
 
 - **Resolved the "ranking season cadence" open item from `docs/plan.md`:

@@ -49,13 +49,21 @@
 - Phase 3 — ranking (seasons, scoring, leaderboard), forum (categories/threads/replies/
   props, moderation), subscriptions+wallet (mock payment providers, real paywall gate on
   map.submit/forum.createThread+reply/gallery upload): **done**.
-- Phase 4 — full site CMS (typed config over site_content kv, admin /admin/cms with 5 tabs,
-  public site reads hero/announcement/nav/gallery-categories/locale-overrides from it,
+- Phase 4 — full site CMS (typed config over site_content kv, admin /admin/cms with 6 tabs,
+  public site reads hero/announcement/nav/gallery-categories/locale-overrides/legal from it,
   /pages/:slug for published info pages): **done**.
 - Phase 5 — hardening (Turnstile anti-bot + rate limiting on auth/upload/forum, validation
   sweep) + deploy prep (Dockerfile, backup script, .env.production.example, docs/deploy.md):
   **done**. See `docs/deploy.md` for the actual deploy walkthrough and `docs/DECISIONS.md`
   for every non-obvious call made across all phases.
-- Post-launch: invites management (MY INVITES + MOD DESK) and the battles module are
-  **live**. Remaining ideas noted in `docs/plan.md`'s "OPEN DECISIONS" (payments provider
-  choice, ranking season cadence) are product/business calls, not implementation gaps.
+- Post-launch: invites management (MY INVITES + MOD DESK), the battles module (schema,
+  create/submit/CRUD, admin battle control, submission via the gallery upload pipeline),
+  live chat + DMs, public profiles + follows + badges, NIGHT WALK palette, Web Push for DMs,
+  and a first-visit Terms-then-News popup are all **live**. Real Stripe + Przelewy24 adapters
+  exist (`modules/subscriptions/providers.ts`) but stay inert until an operator sets their env
+  vars *and* flips the admin on/off switch (`docs/deploy.md`, "Real payment providers") — no
+  real keys exist yet, PayPal stays mock permanently. The first-visit Terms popup's legal text
+  is a **placeholder** (`docs/DECISIONS.md`) awaiting the site owner's real regulamin text and
+  explicit sign-off. Remaining ideas in `docs/plan.md`'s "OPEN DECISIONS" (ranking season
+  cadence — resolved; payments provider choice — code exists for both, key/switch is a business
+  call) are product/business calls, not implementation gaps.
