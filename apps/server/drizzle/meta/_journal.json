@@ -50,6 +50,13 @@
       "when": 1786061365147,
       "tag": "0006_dapper_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1786071993179,
+      "tag": "0007_nosy_whirlwind",
+      "breakpoints": true
     }
   ]
 }
