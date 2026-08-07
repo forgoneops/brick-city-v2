@@ -18,6 +18,7 @@ import {
 } from '../../db/schema.js';
 import { ROLES } from '@bcv2/shared';
 import { closeActiveSeasonAndOpenNext, rotateSeasonIfDue, runNightlyRecalc } from '../ranking/scoring.js';
+import { listProviderStates } from '../subscriptions/providers.js';
 
 export const adminRouter = router({
   // Dashboard counters.
@@ -290,7 +291,7 @@ export const adminRouter = router({
           .object({ cursor: z.string().datetime().optional(), limit: z.number().int().min(1).max(50).optional() })
           .optional()
       )
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         const db = getDb();
         const limit = input?.limit ?? 20;
         const conditions = input?.cursor
@@ -324,9 +325,10 @@ export const adminRouter = router({
   }),
 
   providers: router({
+    // Returns all three known providers even before any row exists —
+    // a missing row means disabled, so the panel always has switches to flip.
     list: adminProcedure.query(async () => {
-      const db = getDb();
-      return db.select().from(paymentProviders);
+      return listProviderStates();
     }),
 
     setEnabled: adminProcedure
