@@ -291,7 +291,7 @@ export const adminRouter = router({
           .object({ cursor: z.string().datetime().optional(), limit: z.number().int().min(1).max(50).optional() })
           .optional()
       )
-      .query(async ({ ctx, input }) => {
+      .query(async ({ input }) => {
         const db = getDb();
         const limit = input?.limit ?? 20;
         const conditions = input?.cursor
