@@ -215,5 +215,6 @@
   "admin_cms_legal_version": "Version",
   "admin_cms_legal_version_hint": "Erhöhen, um den Popup allen erneut zu zeigen, auch bei einer kleinen Textänderung.",
   "admin_cms_registration_title": "Registrierung",
-  "admin_cms_registration_invite_only": "Registrierung nur auf Einladung"
+  "admin_cms_registration_invite_only": "Registrierung nur auf Einladung",
+  "map_no_pins": "NOCH KEINE PINS"
 }

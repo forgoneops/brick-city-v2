@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { trpc } from '../lib/trpc.js';
-import { BlurredPin } from '../components/BlurredPin.js';
+import { EmptyState } from '../components/EmptyState.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
@@ -53,7 +53,7 @@ export function Map() {
       {loading ? (
         <p className="label-mono text-smoke">LOADING...</p>
       ) : pins.length === 0 ? (
-        <BlurredPin hint="NO PINS YET" />
+        <EmptyState note={t('map_no_pins')} />
       ) : (
         <div className="h-[60vh] w-full border border-fog bg-asphalt">
           <MapContainer

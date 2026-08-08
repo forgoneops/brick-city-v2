@@ -215,5 +215,6 @@
   "admin_cms_legal_version": "Version",
   "admin_cms_legal_version_hint": "Bump this to re-show the popup to everyone, even for a small text change.",
   "admin_cms_registration_title": "Registration",
-  "admin_cms_registration_invite_only": "Invite-only registration"
+  "admin_cms_registration_invite_only": "Invite-only registration",
+  "map_no_pins": "NO PINS YET"
 }

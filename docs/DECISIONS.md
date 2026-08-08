@@ -1,3 +1,43 @@
+# Post-launch — map showed "MEMBERS ONLY" for everyone, including admins (real bug)
+
+- **Root cause was not any of the four hypothesized causes** (server not
+  recognizing admin, token not attached, ctx.user not populated, a
+  fetch/auth-load race) — all four were checked and ruled out with real
+  evidence before writing any fix:
+  - Production's `pins` table was completely empty (0 rows) — confirmed by
+    direct query, not assumed from the bug report's wording.
+  - Inserted one real `membersOnly=true` test pin, then drove a real headless
+    browser through an actual admin login against production and inspected
+    the real `map.list` network response: server returned genuine non-null
+    `lat`/`lng` for the admin session, and the client rendered the real
+    popup content — no "MEMBERS ONLY" anywhere. Server and client per-pin
+    gating logic were both already correct.
+  - Repeated the same test logged out: server correctly nulled `lat`/`lng`,
+    client correctly rendered "MEMBERS ONLY" for that pin. This path was
+    never broken and was left untouched.
+  - **Actual bug**: `Map.tsx`'s zero-pins empty state
+    (`pins.length === 0 ? <BlurredPin hint="NO PINS YET" /> : ...`) reused
+    `BlurredPin`, a component whose entire job is unconditionally rendering
+    the `members_only` i18n string — the `hint` prop only adds a *second*,
+    smaller line underneath. With zero pins on the map (true for every
+    visitor, membership status irrelevant), everyone saw "MEMBERS ONLY" as
+    the primary, prominent text, which is exactly what "the map shows
+    members only" describes.
+- **Fix**: swapped `BlurredPin` for the existing generic `EmptyState`
+  component in the zero-pins branch, with a real (previously hardcoded,
+  unlocalized) `map_no_pins` i18n key instead of a raw `"NO PINS YET"`
+  string literal.
+- **Deleted `BlurredPin.tsx` entirely**, not left in place — after the fix
+  it had zero remaining call sites anywhere in the codebase. The real
+  per-pin members-only blur treatment (opacity 0.4, fake shared coordinate,
+  "MEMBERS ONLY" popup) was already implemented inline in `Map.tsx`'s own
+  marker rendering and never actually used this component; it was vestigial
+  from an earlier approach, and its only live call site was the one that
+  caused this bug.
+- **No race-condition fix applied** — diagnosis found no evidence of one
+  (steady-state behavior was correct in both real-browser tests), and the
+  instructions were explicit not to apply hypothesized fixes speculatively.
+
 # Post-launch — header never reflected logged-in state (real bug)
 
 - **Root cause confirmed by direct inspection before touching anything**:
