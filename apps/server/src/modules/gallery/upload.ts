@@ -14,6 +14,7 @@ import { evaluateAccess } from '../subscriptions/access.js';
 
 const MAX_EDGE = 1600;
 const THUMB_EDGE = 480;
+const AVATAR_EDGE = 512;
 
 async function anonymousUploadsAllowed(): Promise<boolean> {
   const db = getDb();
@@ -28,6 +29,13 @@ async function anonymousUploadsAllowed(): Promise<boolean> {
 // POST /upload — multipart form: file (image), title, category, city.
 // Auth optional: Bearer token -> authorId, otherwise anonymous (authorId null)
 // when the CMS flag allows it.
+//
+// Also doubles as the avatar upload path via `purpose=avatar` (a thin
+// variant, not a second endpoint): square-cropped instead of contain-fit,
+// no title/category/paywall/anonymous-upload gating, and — unlike a gallery
+// photo — never inserted into `photos`, so re-uploading an avatar doesn't
+// litter the public gallery with throwaway rows. Auth is still required
+// (it's always the caller's own avatar) and the same rate limit applies.
 export async function handleUpload(c: Context) {
   const auth = c.req.header('authorization');
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
@@ -41,7 +49,16 @@ export async function handleUpload(c: Context) {
     return c.json({ error: 'Too many uploads — slow down.' }, 429);
   }
 
-  if (session) {
+  const form = await c.req.formData();
+  const file = form.get('file');
+  const purpose = String(form.get('purpose') ?? 'gallery');
+  const isAvatar = purpose === 'avatar';
+
+  if (isAvatar) {
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+  } else if (session) {
     const access = await evaluateAccess(session.sub, session.role);
     if (!access.allowed) {
       return c.json({ error: 'PAYWALL' }, 402);
@@ -50,8 +67,6 @@ export async function handleUpload(c: Context) {
     return c.json({ error: 'Anonymous uploads are disabled' }, 403);
   }
 
-  const form = await c.req.formData();
-  const file = form.get('file');
   const title = String(form.get('title') ?? '').trim();
   const category = String(form.get('category') ?? 'other');
   const city = String(form.get('city') ?? '').trim();
@@ -62,14 +77,34 @@ export async function handleUpload(c: Context) {
   if (file.size > env.MAX_UPLOAD_MB * 1024 * 1024) {
     return c.json({ error: `File too large (max ${env.MAX_UPLOAD_MB} MB)` }, 413);
   }
-  if (!title) {
-    return c.json({ error: 'Missing title' }, 400);
-  }
-  if (!(GALLERY_CATEGORIES as readonly string[]).includes(category)) {
-    return c.json({ error: 'Invalid category' }, 400);
+  if (!isAvatar) {
+    if (!title) {
+      return c.json({ error: 'Missing title' }, 400);
+    }
+    if (!(GALLERY_CATEGORIES as readonly string[]).includes(category)) {
+      return c.json({ error: 'Invalid category' }, 400);
+    }
   }
 
   const input = Buffer.from(await file.arrayBuffer());
+
+  const storage = getStorage();
+
+  if (isAvatar) {
+    let avatar: Buffer;
+    try {
+      avatar = await sharp(input)
+        .rotate()
+        .resize({ width: AVATAR_EDGE, height: AVATAR_EDGE, fit: 'cover' })
+        .webp({ quality: 85 })
+        .toBuffer();
+    } catch {
+      return c.json({ error: 'Unsupported image data' }, 415);
+    }
+    const key = newUploadKey('avatar.webp');
+    await storage.put(key, avatar, 'image/webp');
+    return c.json({ imageUrl: storage.url(key) }, 201);
+  }
 
   let image: Buffer;
   let thumb: Buffer;
@@ -88,7 +123,6 @@ export async function handleUpload(c: Context) {
     return c.json({ error: 'Unsupported image data' }, 415);
   }
 
-  const storage = getStorage();
   const key = newUploadKey('photo.webp');
   const thumbKey = key.replace(/photo\.webp$/, 'thumb.webp');
   await storage.put(key, image, 'image/webp');

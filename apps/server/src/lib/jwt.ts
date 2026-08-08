@@ -9,12 +9,22 @@ export interface SessionPayload {
   role: Role;
 }
 
-export async function signSessionToken(payload: SessionPayload): Promise<string> {
+// Default sessions are idle-monitored client-side (30 min — see
+// lib/session.tsx) so the JWT itself only needs a short hard ceiling, not a
+// week-long TTL, per the "keep me logged in" opt-in decision (see
+// docs/DECISIONS.md). "Remember me" sessions skip client idle tracking
+// entirely, so their token TTL is the only expiry that matters — 30d rather
+// than the old flat 7d, since a deliberate opt-in reads more like "remember
+// me for a month" than "for a week."
+const DEFAULT_SESSION_TTL = '4h';
+const REMEMBER_ME_TTL = '30d';
+
+export async function signSessionToken(payload: SessionPayload, rememberMe = false): Promise<string> {
   return new SignJWT({ role: payload.role })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(payload.sub)
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime(rememberMe ? REMEMBER_ME_TTL : DEFAULT_SESSION_TTL)
     .sign(secret);
 }
 

@@ -2,11 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { trpc } from '../lib/trpc.js';
 import { ModulePage } from '../components/ModulePage.js';
+import { Icon } from '../components/Icon.js';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
 
 interface ProfileData {
-  user: { nick: string; role: string; createdAt: string };
+  user: {
+    nick: string;
+    role: string;
+    createdAt: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    location: string | null;
+    style: string | null;
+  };
   stats: { followers: number; following: number; photos: number };
   badges: string[];
   recentPhotos: { id: string; title: string; thumbUrl: string; propsCount: number; createdAt: string }[];
@@ -48,6 +57,31 @@ export function PublicProfile() {
   return (
     <ModulePage title={data.user.nick} icon="mask" tag={`WRITER / ${data.user.role.toUpperCase()}`}>
       <div className="space-y-6">
+        {/* Avatar + location/style/bio */}
+        {(data.user.avatarUrl || data.user.location || data.user.style || data.user.bio) && (
+          <div className="flex items-start gap-4 border border-fog px-3 py-3">
+            <div className="h-20 w-20 shrink-0 overflow-hidden border border-fog bg-asphalt">
+              {data.user.avatarUrl ? (
+                <img src={data.user.avatarUrl} alt={data.user.nick} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-smoke">
+                  <Icon name="mask" size={28} />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 space-y-1">
+              {(data.user.location || data.user.style) && (
+                <p className="label-mono text-smoke">
+                  {[data.user.location, data.user.style && t(`cat_${data.user.style.replace('-', '_')}`)]
+                    .filter(Boolean)
+                    .join(' — ')}
+                </p>
+              )}
+              {data.user.bio && <p className="whitespace-pre-wrap text-sm text-bone">{data.user.bio}</p>}
+            </div>
+          </div>
+        )}
+
         {/* Badges */}
         {data.badges.length > 0 && (
           <div className="flex flex-wrap gap-2">

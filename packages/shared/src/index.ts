@@ -85,6 +85,10 @@ export interface PublicUser {
   walletBalanceCents: number;
   trialEndsAt: string | null;
   createdAt: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  location: string | null;
+  style: GalleryCategory | null;
 }
 
 // ---------------------------------------------------------------------------

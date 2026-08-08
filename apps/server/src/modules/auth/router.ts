@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 const registerLimited = publicProcedure.use(rateLimited('auth.register', { windowMs: 60_000, max: 5 }));
 const loginLimited = publicProcedure.use(rateLimited('auth.login', { windowMs: 60_000, max: 10 }));
 
-function toPublicUser(user: typeof users.$inferSelect): PublicUser {
+export function toPublicUser(user: typeof users.$inferSelect): PublicUser {
   return {
     id: user.id,
     email: user.email,
@@ -25,6 +25,10 @@ function toPublicUser(user: typeof users.$inferSelect): PublicUser {
     walletBalanceCents: user.walletBalanceCents,
     trialEndsAt: user.trialEndsAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
+    avatarUrl: user.avatarUrl ?? null,
+    bio: user.bio ?? null,
+    location: user.location ?? null,
+    style: (user.style as PublicUser['style']) ?? null,
   };
 }
 
@@ -37,6 +41,7 @@ export const authRouter = router({
         password: z.string().min(8),
         inviteCode: z.string().min(1).optional(),
         turnstileToken: z.string().optional(),
+        rememberMe: z.boolean().optional().default(false),
       })
     )
     .mutation(async ({ input }) => {
@@ -121,7 +126,7 @@ export const authRouter = router({
         }
 
         const [created] = await tx.select().from(users).where(eq(users.id, userId));
-        const token = await signSessionToken({ sub: created.id, role: created.role });
+        const token = await signSessionToken({ sub: created.id, role: created.role }, input.rememberMe);
 
         return { token, user: toPublicUser(created) };
       });
@@ -135,6 +140,7 @@ export const authRouter = router({
       z.object({
         identifier: z.string().min(1),
         password: z.string(),
+        rememberMe: z.boolean().optional().default(false),
       })
     )
     .mutation(async ({ input }) => {
@@ -151,7 +157,7 @@ export const authRouter = router({
       if (!valid) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
       }
-      const token = await signSessionToken({ sub: user.id, role: user.role });
+      const token = await signSessionToken({ sub: user.id, role: user.role }, input.rememberMe);
       return { token, user: toPublicUser(user) };
     }),
 

@@ -570,3 +570,52 @@ type out of `News.tsx`; no behavior intentionally changed.
   onto the row after a successful debit. If admin changes the price mid-cycle,
   already-active subscribers keep their current period at the old price —
   no retroactive re-charge, only the next debit picks up the new price.
+
+## Extended profiles (avatar/bio/location/style)
+
+- **`style` is a plain `varchar(64)`, not a DB-level `mysqlEnum`**, even
+  though its only valid values today are `GALLERY_CATEGORIES`. Validation
+  lives in `modules/users/router.ts`'s `updateProfile` input schema
+  (`z.enum(GALLERY_CATEGORIES)`) instead — matches how `photos.category`
+  originally started and keeps a future "let admins add custom styles"
+  change to app code only, no migration.
+- **Avatar upload reuses `POST /upload` via a `purpose=avatar` form field**
+  rather than a second endpoint or a second route. When `purpose === 'avatar'`
+  the handler square-crops (`fit: 'cover'`, 512px) instead of the gallery's
+  contain-fit, skips the title/category/paywall/anonymous-upload checks
+  (avatars aren't paywalled and always belong to the caller), and — this is
+  the part that would've been a real bug otherwise — never inserts into
+  `photos`. Battles' own submission flow already reuses this same endpoint
+  and tolerates a throwaway gallery photo row per submission; avatars can't
+  tolerate that (every re-upload would litter the public gallery grid with a
+  junk "live" photo), hence the thin variant instead of following that same
+  pattern as-is.
+- **`users.updateProfile` treats every field as independently
+  optional/nullable**: omitting a key leaves it untouched, sending `null`
+  clears it. The web form always sends all four together, but the looser
+  contract costs nothing and means the immediate avatar-only save (fires
+  right after upload, before the rest of the form is submitted) doesn't need
+  a separate mutation shape.
+
+## Idle auto-logout / "keep me logged in"
+
+- **Non-"remember me" sessions get a 4-hour JWT ceiling, "remember me"
+  sessions get 30 days** (`lib/jwt.ts`), replacing the old flat 7-day expiry
+  for every login. Neither number is the actual inactivity rule — that's
+  enforced client-side (`lib/session.tsx`: 29-minute warning, 30-minute
+  logout, reset by mousemove/keydown/click/touchstart/visibilitychange). The
+  JWT TTLs are only hard ceilings: 4h comfortably outlasts the 30-minute idle
+  window (so a genuinely active session is never cut off by the token itself,
+  only by the idle timer), while a deliberate "keep me logged in" opt-in
+  reads more like "remember me for a month" than "for a week," hence 30d over
+  the brief's other suggestion of extending the old 7d.
+- **The idle warning modal has no separate "dismiss" plumbing** — its "stay
+  logged in" button calls the same `resetIdleTimers` that every tracked
+  activity event already calls, so the modal is just another activity source
+  rather than a special case.
+- **`rememberMe` is persisted in `localStorage` (`bcm_remember_me`)
+  independent of the JWT itself** — it's what tells the client whether to run
+  the idle tracker at all for the current session, not something the server
+  needs to see again after login. Cleared on every logout (including an idle
+  auto-logout), so a fresh login always defaults to the shorter, monitored
+  session unless the box is checked again.

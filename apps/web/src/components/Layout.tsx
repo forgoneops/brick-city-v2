@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon.js';
 import { PaywallGate } from './PaywallGate.js';
 import { FirstVisitPopups } from './FirstVisitPopups.js';
+import { IdleWarningModal } from './IdleWarningModal.js';
 import { UpdateBanner } from './UpdateBanner.js';
 import { useT, type Locale, LOCALES } from '../i18n/index.js';
 import { useCms } from '../lib/cms.js';
@@ -110,6 +111,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen bg-ink text-bone">
         <UpdateBanner />
         <PaywallGate />
+        <IdleWarningModal />
         {children}
       </div>
     );
@@ -122,6 +124,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <UpdateBanner />
       <PaywallGate />
       <FirstVisitPopups />
+      <IdleWarningModal />
       {announcement?.enabled && announcement.text && (
         <div className="border-b border-fog bg-concrete px-4 py-2 text-center md:ml-44">
           <p className="label-mono text-bone">

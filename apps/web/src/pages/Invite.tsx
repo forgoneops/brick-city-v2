@@ -4,6 +4,7 @@ import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
 import { useCms } from '../lib/cms.js';
 import { TurnstileWidget } from '../components/TurnstileWidget.js';
+import { Switch } from '../components/Switch.js';
 
 export function Invite() {
   const { t } = useT();
@@ -17,6 +18,7 @@ export function Invite() {
   const [email, setEmail] = useState('');
   const [nick, setNick] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export function Invite() {
     setError(null);
     setLoading(true);
     try {
-      await register(email, nick, password, code.trim() || undefined, turnstileToken);
+      await register(email, nick, password, code.trim() || undefined, turnstileToken, rememberMe);
       navigate('/');
     } catch {
       setError('REGISTRATION FAILED');
@@ -95,6 +97,10 @@ export function Invite() {
           className="input mt-2"
           required
         />
+
+        <div className="mt-4">
+          <Switch checked={rememberMe} onChange={setRememberMe} label={t('login_remember_me')} />
+        </div>
 
         <TurnstileWidget onToken={setTurnstileToken} />
 

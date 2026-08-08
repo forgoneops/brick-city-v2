@@ -219,5 +219,21 @@
   "map_no_pins": "NO PINS YET",
   "update_available_message": "NEW LAYER DROPPED — RELOAD TO SEE IT.",
   "update_available_action": "Reload",
-  "update_available_dismiss": "Later"
+  "update_available_dismiss": "Later",
+  "profile_details_title": "PROFILE DETAILS",
+  "profile_avatar": "Avatar",
+  "profile_avatar_upload": "Upload avatar",
+  "profile_avatar_uploading": "Uploading...",
+  "profile_location": "Location",
+  "profile_location_placeholder": "City / area",
+  "profile_style": "Style",
+  "profile_style_unset": "— not set —",
+  "profile_bio": "Bio",
+  "profile_bio_char_count": "{{count}} / {{max}}",
+  "login_remember_me": "Keep me logged in",
+  "idle_modal_title": "Still there?",
+  "idle_modal_tag": "SESSION / IDLE",
+  "idle_modal_message": "You'll be logged out in 60 seconds due to inactivity.",
+  "idle_modal_stay": "Stay logged in",
+  "login_idle_logout_message": "YOU WERE LOGGED OUT DUE TO INACTIVITY."
 }

@@ -19,6 +19,14 @@ export const users = mysqlTable('users', {
   walletBalanceCents: int('wallet_balance_cents').notNull().default(0),
   trialEndsAt: timestamp('trial_ends_at'),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  // Extended profile (avatar/bio/location/style) — all nullable, all
+  // optional at signup. `style` is free varchar rather than a DB-level
+  // mysqlEnum so it can reuse GALLERY_CATEGORIES validated at the app layer
+  // (see modules/users/router.ts) without a schema-level FK to that enum.
+  avatarUrl: varchar('avatar_url', { length: 2048 }),
+  bio: varchar('bio', { length: 500 }),
+  location: varchar('location', { length: 120 }),
+  style: varchar('style', { length: 64 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

@@ -219,5 +219,21 @@
   "map_no_pins": "NOCH KEINE PINS",
   "update_available_message": "NEUE SCHICHT IST DA — NEU LADEN, UM SIE ZU SEHEN.",
   "update_available_action": "Neu laden",
-  "update_available_dismiss": "Später"
+  "update_available_dismiss": "Später",
+  "profile_details_title": "PROFILDATEN",
+  "profile_avatar": "Avatar",
+  "profile_avatar_upload": "Avatar hochladen",
+  "profile_avatar_uploading": "Wird hochgeladen...",
+  "profile_location": "Standort",
+  "profile_location_placeholder": "Stadt / Gegend",
+  "profile_style": "Stil",
+  "profile_style_unset": "— nicht festgelegt —",
+  "profile_bio": "Bio",
+  "profile_bio_char_count": "{{count}} / {{max}}",
+  "login_remember_me": "Angemeldet bleiben",
+  "idle_modal_title": "Noch da?",
+  "idle_modal_tag": "SITZUNG / INAKTIV",
+  "idle_modal_message": "Du wirst in 60 Sekunden wegen Inaktivität abgemeldet.",
+  "idle_modal_stay": "Angemeldet bleiben",
+  "login_idle_logout_message": "DU WURDEST WEGEN INAKTIVITÄT ABGEMELDET."
 }
