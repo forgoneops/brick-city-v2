@@ -619,3 +619,38 @@ type out of `News.tsx`; no behavior intentionally changed.
   needs to see again after login. Cleared on every logout (including an idle
   auto-logout), so a fresh login always defaults to the shorter, monitored
   session unless the box is checked again.
+
+## Dependency audit (2026-08-08)
+
+`npm audit` flagged 6 advisories (5 moderate, 1 high). Two were real and
+fixed by a version bump; one is left open with the reason documented below
+rather than force-fixed into a regression:
+
+- **`drizzle-orm` bumped `^0.44.0` -> `^0.45.2`** — fixes a HIGH-severity SQL
+  identifier-escaping injection (GHSA-gpj5-g38j-94v9). Verified after the
+  bump: `tsc` clean, a real login round-trip through the ORM (query +
+  `.for('update')` + `sql` template usage elsewhere in the codebase all
+  unchanged), no API surface changes hit our usage.
+- **`@hono/node-server` bumped `^1.13.7` -> `^2.1.0`** — fixes a moderate
+  Windows-specific path-traversal in `serve-static` via an encoded backslash
+  (GHSA-frvp-7c67-39w9). Production runs in a Linux container so the actual
+  vector was never reachable here, but it's real code we use (`serveStatic`
+  serves `/uploads/*`) so it's worth being on the fixed version regardless.
+  Verified: `/uploads/*` still serves a real uploaded file with the correct
+  content-type after the bump.
+- **Left open: a vulnerable `esbuild` (<=0.24.2) nested inside
+  `drizzle-kit`'s own dependency on the deprecated `@esbuild-kit/esm-loader`**
+  (GHSA-67mh-4wv8-2f99 — "esbuild's dev server accepts cross-origin
+  requests"). This is present in every drizzle-kit release checked, including
+  the latest stable (0.31.10) and even the newest `1.0.0-rc.4` prerelease —
+  not something a version bump on our end can fix. `npm audit fix --force`'s
+  own suggested remediation is to *downgrade* to `drizzle-kit@0.18.1`, which
+  predates the `dialect: 'mysql'` config format `drizzle.config.ts` already
+  relies on and would break `db:generate`/`db:migrate` outright — a strictly
+  worse outcome than the advisory itself. The actual vulnerable code path
+  (esbuild's `serve()` dev server accepting arbitrary cross-origin requests)
+  is never invoked in this codebase — drizzle-kit only uses esbuild's
+  transform/build API internally to load the TS config file, and this
+  package is a devDependency only (`drizzle-kit migrate` at container boot,
+  never bundled into request-handling code). Revisit if/when drizzle-kit
+  ships a release that drops the `@esbuild-kit/esm-loader` dependency.
