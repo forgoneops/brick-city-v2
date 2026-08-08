@@ -30,10 +30,13 @@ function registerServiceWorker() {
         // across separate page loads, missing the same-tab-stays-open case
         // this feature exists for.
         const hadController = Boolean(navigator.serviceWorker.controller);
+        console.log('[sw-debug] updatefound, hadController=', hadController); // TEMP
         const installing = registration.installing;
         if (!installing) return;
         installing.addEventListener('statechange', () => {
+          console.log('[sw-debug] statechange ->', installing.state); // TEMP
           if (installing.state === 'activated' && hadController) {
+            console.log('[sw-debug] calling setUpdateAvailable()'); // TEMP
             setUpdateAvailable();
           }
         });
