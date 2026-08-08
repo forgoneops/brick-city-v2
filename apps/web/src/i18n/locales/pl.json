@@ -235,5 +235,7 @@
   "idle_modal_tag": "SESJA / BEZCZYNNOŚĆ",
   "idle_modal_message": "Zostaniesz wylogowany za 60 sekund z powodu bezczynności.",
   "idle_modal_stay": "Zostań zalogowany",
-  "login_idle_logout_message": "ZOSTAŁEŚ WYLOGOWANY Z POWODU BEZCZYNNOŚCI."
+  "login_idle_logout_message": "ZOSTAŁEŚ WYLOGOWANY Z POWODU BEZCZYNNOŚCI.",
+  "home_feed_title": "Z ULICY",
+  "home_feed_empty": "JESZCZE NIC NIE WISI. WRÓĆ PÓŹNIEJ."
 }

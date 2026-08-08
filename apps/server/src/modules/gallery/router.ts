@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { GALLERY_CATEGORIES } from '@bcv2/shared';
@@ -9,6 +9,12 @@ import { comments, galleryCategoryValues, photos, props, users } from '../../db/
 import { recalculateUserScore } from '../ranking/scoring.js';
 
 const PAGE_SIZE = 12;
+const HOME_FEED_DEFAULT = 8;
+const HOME_FEED_MAX = 20;
+// Candidate pool cap for homeFeed's weighted sampling — see the "Home feed"
+// entry in docs/DECISIONS.md for why these two numbers.
+const HOME_FEED_POOL_TOP_PROPS = 300;
+const HOME_FEED_POOL_RECENT = 50;
 
 function serializePhoto(row: {
   photos: typeof photos.$inferSelect;
@@ -24,9 +30,36 @@ function serializePhoto(row: {
     thumbUrl: p.thumbUrl,
     propsCount: p.propsCount,
     status: p.status,
+    authorId: p.authorId,
     authorNick: row.users?.nick ?? null,
     createdAt: p.createdAt.toISOString(),
   };
+}
+
+// Weighted-without-replacement sampling: repeatedly draw one item from the
+// remaining pool with probability proportional to its weight, remove it, and
+// draw again. O(pool * n) — fine at the pool sizes this is ever called with
+// (see HOME_FEED_POOL_* above), and far easier to verify correct than a raw
+// SQL random-order trick.
+function weightedSampleWithoutReplacement<T>(items: { item: T; weight: number }[], n: number): T[] {
+  const pool = [...items];
+  const picked: T[] = [];
+  const count = Math.min(n, pool.length);
+  for (let i = 0; i < count; i++) {
+    const totalWeight = pool.reduce((sum, p) => sum + p.weight, 0);
+    let r = Math.random() * totalWeight;
+    let index = pool.length - 1;
+    for (let j = 0; j < pool.length; j++) {
+      r -= pool[j].weight;
+      if (r <= 0) {
+        index = j;
+        break;
+      }
+    }
+    picked.push(pool[index].item);
+    pool.splice(index, 1);
+  }
+  return picked;
 }
 
 export const galleryRouter = router({
@@ -71,6 +104,61 @@ export const galleryRouter = router({
         nextCursor:
           rows.length > limit && last ? last.photos.createdAt.toISOString() : null,
       };
+    }),
+
+  // Homepage "FROM THE STREETS" strip: weighted-random pick from live
+  // photos, weight = propsCount + 1 (the +1 floor so a brand-new 0-prop
+  // photo can still surface — otherwise the homepage ossifies around
+  // whatever got early props). Voting itself already exists (props.toggle
+  // above); this is purely a read/selection endpoint.
+  homeFeed: publicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(HOME_FEED_MAX).optional() }).optional())
+    .query(async ({ input }) => {
+      const limit = input?.limit ?? HOME_FEED_DEFAULT;
+      const db = getDb();
+
+      const [topByProps, recent] = await Promise.all([
+        db
+          .select({ id: photos.id, propsCount: photos.propsCount })
+          .from(photos)
+          .where(eq(photos.status, 'live'))
+          .orderBy(desc(photos.propsCount))
+          .limit(HOME_FEED_POOL_TOP_PROPS),
+        db
+          .select({ id: photos.id, propsCount: photos.propsCount })
+          .from(photos)
+          .where(eq(photos.status, 'live'))
+          .orderBy(desc(photos.createdAt))
+          .limit(HOME_FEED_POOL_RECENT),
+      ]);
+
+      const candidates = new Map<string, number>();
+      for (const row of [...topByProps, ...recent]) {
+        candidates.set(row.id, row.propsCount);
+      }
+      if (candidates.size === 0) {
+        return { items: [] };
+      }
+
+      const weighted = [...candidates.entries()].map(([id, propsCount]) => ({
+        item: id,
+        weight: propsCount + 1,
+      }));
+      const selectedIds = weightedSampleWithoutReplacement(weighted, limit);
+
+      const rows = await db
+        .select()
+        .from(photos)
+        .leftJoin(users, eq(photos.authorId, users.id))
+        .where(inArray(photos.id, selectedIds));
+
+      const byId = new Map(rows.map((r) => [r.photos.id, r]));
+      const items = selectedIds
+        .map((id) => byId.get(id))
+        .filter((row): row is NonNullable<typeof row> => Boolean(row))
+        .map(serializePhoto);
+
+      return { items };
     }),
 
   byId: publicProcedure

@@ -654,3 +654,34 @@ rather than force-fixed into a regression:
   package is a devDependency only (`drizzle-kit migrate` at container boot,
   never bundled into request-handling code). Revisit if/when drizzle-kit
   ships a release that drops the `@esbuild-kit/esm-loader` dependency.
+
+## Home feed (`gallery.homeFeed`)
+
+- **Candidate pool capped at top 300 by `propsCount` + most recent 50**
+  (deduped by id) rather than loading every live photo before sampling.
+  Both numbers are generous relative to any volume this app is actually at
+  today — the point is a fixed, cheap upper bound (two indexed `ORDER BY
+  ... LIMIT` queries) instead of a full-table scan that grows unbounded with
+  the gallery. The "most recent 50" half of the union is what keeps a photo
+  uploaded seconds ago eligible even though it'll never make the top-300-by-
+  props cut on its own — the props-based half alone would let old, already-
+  popular photos crowd out everything new.
+- **Weighted-without-replacement sampling is plain application code**
+  (`weightedSampleWithoutReplacement` in `modules/gallery/router.ts`): draw
+  one item from the remaining pool with probability proportional to weight,
+  remove it, repeat. `O(pool * n)`, trivially fast at pool sizes capped at
+  350 and `n` capped at 20. Chosen over a `ORDER BY RAND() * weight`-style
+  SQL trick specifically because it's easy to unit-reason-about and to
+  verify empirically (see the verification run in the PR/commit for this
+  feature) — worth the tradeoff at this scale even though it means two round
+  trips (pool fetch, then a second `WHERE id IN (...)` fetch for the
+  selected rows) instead of one query.
+- **Weight = `propsCount + 1`**, not raw `propsCount` — a brand-new photo
+  with 0 props needs a nonzero weight or it can never be drawn, which would
+  make the feed permanently biased toward whatever got early traction.
+- **Each home-feed card links to `/gallery`, not a per-photo detail page** —
+  there is no per-photo detail route in this app despite `gallery.byId`
+  existing server-side (unused by any current page). `Gallery.tsx`'s own
+  cards don't link anywhere either. Building a detail view was out of scope
+  for this task ("nothing to build for voting itself"), so cards link to the
+  gallery listing instead of inventing a new route.

@@ -235,5 +235,7 @@
   "idle_modal_tag": "SITZUNG / INAKTIV",
   "idle_modal_message": "Du wirst in 60 Sekunden wegen Inaktivität abgemeldet.",
   "idle_modal_stay": "Angemeldet bleiben",
-  "login_idle_logout_message": "DU WURDEST WEGEN INAKTIVITÄT ABGEMELDET."
+  "login_idle_logout_message": "DU WURDEST WEGEN INAKTIVITÄT ABGEMELDET.",
+  "home_feed_title": "VON DER STRASSE",
+  "home_feed_empty": "NOCH NICHTS DRAUSSEN. SCHAU SPÄTER VORBEI."
 }

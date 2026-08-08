@@ -235,5 +235,7 @@
   "idle_modal_tag": "SESSION / IDLE",
   "idle_modal_message": "You'll be logged out in 60 seconds due to inactivity.",
   "idle_modal_stay": "Stay logged in",
-  "login_idle_logout_message": "YOU WERE LOGGED OUT DUE TO INACTIVITY."
+  "login_idle_logout_message": "YOU WERE LOGGED OUT DUE TO INACTIVITY.",
+  "home_feed_title": "FROM THE STREETS",
+  "home_feed_empty": "NOTHING LIVE YET. CHECK BACK SOON."
 }
