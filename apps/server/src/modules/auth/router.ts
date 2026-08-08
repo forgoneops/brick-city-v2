@@ -127,16 +127,23 @@ export const authRouter = router({
       });
     }),
 
+  // Accepts either an email or a nick — checks email shape first (users.email
+  // is the more common login habit), falling back to a lookup on the unique
+  // nick column when the identifier isn't email-shaped.
   login: loginLimited
     .input(
       z.object({
-        email: z.string().email(),
+        identifier: z.string().min(1),
         password: z.string(),
       })
     )
     .mutation(async ({ input }) => {
       const db = getDb();
-      const [user] = await db.select().from(users).where(eq(users.email, input.email));
+      const isEmail = z.string().email().safeParse(input.identifier).success;
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(isEmail ? eq(users.email, input.identifier) : eq(users.nick, input.identifier));
       if (!user) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
       }

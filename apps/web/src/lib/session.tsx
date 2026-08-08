@@ -6,7 +6,7 @@ import { getToken, setToken, trpc } from './trpc.js';
 interface AuthContextValue {
   user: PublicUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (
     email: string,
     nick: string,
@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await trpc.auth.login.mutate({ email, password });
+  const login = useCallback(async (identifier: string, password: string) => {
+    const res = await trpc.auth.login.mutate({ identifier, password });
     setToken(res.token);
     setUser(res.user);
   }, []);

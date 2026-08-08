@@ -36,7 +36,7 @@
   "home_hero_cta": "Enter the alley",
   "home_hero_whisper": "EST. ON CONCRETE",
   "login_title": "Login",
-  "login_email": "Email",
+  "login_identifier": "Email or nick",
   "login_password": "Password",
   "invite_title": "Invite-only registration",
   "invite_code": "Invite code",

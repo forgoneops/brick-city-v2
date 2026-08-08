@@ -1,3 +1,21 @@
+# Post-launch — auth.login accepts email or nick
+
+- **Branch is a one-time `z.string().email().safeParse` shape check, not a
+  try-email-then-try-nick fallback chain.** If the identifier looks like an
+  email, it's looked up by `users.email`; otherwise by the unique
+  `users.nick`. A real nick can never accidentally look email-shaped in this
+  app (nicks are seeded as plain uppercase handles like `GATEKEEPER`), so
+  there's no realistic collision case where the wrong branch fires.
+- **Renamed the request field to `identifier`** (was `email`) on both the
+  tRPC input and `useAuth().login()`'s parameter — a field literally called
+  `email` that sometimes holds a nick would be actively misleading to the
+  next person touching this code.
+- **Login.tsx's input type changed from `email` to `text`.** The browser's
+  built-in `type="email"` validation would reject a plain nick before the
+  form even submits.
+- **`login_email` i18n key renamed in place to `login_identifier`** (not
+  left as a second unused key) — confirmed nothing else referenced it first.
+
 # Post-launch — invite-only registration toggle, logo texture pass
 
 ## Registration: admin-togglable invite-only

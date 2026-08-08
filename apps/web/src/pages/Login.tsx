@@ -7,7 +7,7 @@ export function Login() {
   const { t } = useT();
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +15,7 @@ export function Login() {
     e.preventDefault();
     setError(null);
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate('/');
     } catch {
       setError('INVALID CREDENTIALS');
@@ -36,11 +36,12 @@ export function Login() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block">
-            <span className="label-mono">{t('login_email')}</span>
+            <span className="label-mono">{t('login_identifier')}</span>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              autoComplete="username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="input mt-1"
               required
             />
