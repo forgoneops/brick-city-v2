@@ -237,5 +237,13 @@
   "idle_modal_stay": "Angemeldet bleiben",
   "login_idle_logout_message": "DU WURDEST WEGEN INAKTIVITÄT ABGEMELDET.",
   "home_feed_title": "VON DER STRASSE",
-  "home_feed_empty": "NOCH NICHTS DRAUSSEN. SCHAU SPÄTER VORBEI."
+  "home_feed_empty": "NOCH NICHTS DRAUSSEN. SCHAU SPÄTER VORBEI.",
+  "admin_cms_tab_privacy": "Datenschutzerklärung",
+  "admin_cms_privacy_text": "Datenschutzerklärung-Text",
+  "admin_cms_privacy_version": "Version",
+  "admin_cms_privacy_version_hint": "Erhöhen nach einer inhaltlich relevanten Änderung.",
+  "privacy_page_title": "Datenschutzerklärung",
+  "footer_privacy_link": "Datenschutzerklärung",
+  "legal_modal_privacy_link": "Datenschutzerklärung lesen",
+  "invite_privacy_notice": "Mit der Registrierung bestätigst du, unsere Datenschutzerklärung gelesen zu haben."
 }

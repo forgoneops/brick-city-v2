@@ -171,6 +171,17 @@ export interface LegalConfig {
   updatedAt: string | null;
 }
 
+// Privacy Policy — same shape as LegalConfig but a separate domain, since it
+// has its own reachable page (not a blocking first-visit popup) and its own
+// independent `version`/re-publish cadence unrelated to Terms.
+export interface PrivacyConfig {
+  version: number;
+  pl: string;
+  en: string;
+  de: string;
+  updatedAt: string | null;
+}
+
 // Gates whether auth.register requires a valid invite code — see
 // modules/auth/router.ts and docs/DECISIONS.md. Defaults to true.
 export interface RegistrationConfig {
@@ -188,6 +199,7 @@ export interface CmsConfig {
   localeOverrides: LocaleOverridesConfig;
   pricing: CmsPricingConfig;
   legal: LegalConfig;
+  privacy: PrivacyConfig;
   registration: RegistrationConfig;
 }
 

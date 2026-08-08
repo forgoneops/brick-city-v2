@@ -19,6 +19,7 @@ const KEYS = {
   featureFlags: 'cms_feature_flags',
   localeOverrides: 'cms_locale_overrides',
   legal: 'cms_legal',
+  privacy: 'cms_privacy',
   registration: 'cms_registration',
 } as const;
 
@@ -85,6 +86,16 @@ export const legalConfigSchema = z.object({
   de: z.string().max(20_000),
 });
 
+// Privacy Policy — same shape/limits as legal above, but its own domain: a
+// reachable page rather than a blocking popup, so it doesn't share Terms'
+// version/re-trigger semantics. See docs/DECISIONS.md ("Privacy Policy").
+export const privacyConfigSchema = z.object({
+  version: z.number().int(),
+  pl: z.string().max(20_000),
+  en: z.string().max(20_000),
+  de: z.string().max(20_000),
+});
+
 // Gates whether auth.register requires a valid invite code. Defaults to
 // true (see defaultValue below) so adding this toggle is zero behavior
 // change until an admin explicitly flips it — see modules/auth/router.ts.
@@ -101,6 +112,7 @@ const SCHEMAS = {
   featureFlags: featureFlagsConfigSchema,
   localeOverrides: localeOverridesConfigSchema,
   legal: legalConfigSchema,
+  privacy: privacyConfigSchema,
   registration: registrationConfigSchema,
 } as const;
 
@@ -122,6 +134,10 @@ function defaultValue(domain: ConfigDomain): unknown {
       return { values: { en: {}, pl: {}, de: {} } };
     case 'legal': {
       const placeholder = '[PLACEHOLDER — owner to supply final regulamin text]';
+      return { version: 1, pl: placeholder, en: placeholder, de: placeholder };
+    }
+    case 'privacy': {
+      const placeholder = '[PLACEHOLDER — owner to supply final privacy policy text]';
       return { version: 1, pl: placeholder, en: placeholder, de: placeholder };
     }
     case 'registration':
@@ -184,7 +200,7 @@ export function invalidateCmsCache(): void {
 export async function getCmsConfig(): Promise<CmsConfig> {
   if (cached) return cached;
 
-  const [hero, announcement, nav, galleryCategories, battleThemes, featureFlags, localeOverrides, legal, registration] =
+  const [hero, announcement, nav, galleryCategories, battleThemes, featureFlags, localeOverrides, legal, privacy, registration] =
     await Promise.all([
       readDomain<{ title: string; subtitle: string; cta: string }>('hero'),
       readDomain<{ text: string; enabled: boolean; showAsPopup: boolean }>('announcement'),
@@ -194,6 +210,7 @@ export async function getCmsConfig(): Promise<CmsConfig> {
       readDomain<{ flags: Record<string, boolean> }>('featureFlags'),
       readDomain<{ values: Record<string, Record<string, string>> }>('localeOverrides'),
       readDomain<{ version: number; pl: string; en: string; de: string }>('legal'),
+      readDomain<{ version: number; pl: string; en: string; de: string }>('privacy'),
       readDomain<{ inviteOnly: boolean }>('registration'),
     ]);
 
@@ -216,6 +233,7 @@ export async function getCmsConfig(): Promise<CmsConfig> {
     localeOverrides: { ...localeOverrides.value, updatedAt: localeOverrides.updatedAt },
     pricing: { ...pricingValue, updatedAt: pricingRow?.updatedAt.toISOString() ?? null },
     legal: { ...legal.value, updatedAt: legal.updatedAt },
+    privacy: { ...privacy.value, updatedAt: privacy.updatedAt },
     registration: { ...registration.value, updatedAt: registration.updatedAt },
   };
   return cached;

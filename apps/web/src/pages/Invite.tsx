@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useT } from '../i18n/index.js';
 import { useAuth } from '../lib/session.js';
 import { useCms } from '../lib/cms.js';
@@ -115,6 +115,12 @@ export function Invite() {
         >
           {t('action_register')}
         </button>
+
+        <p className="label-mono mt-3 text-center text-smoke">
+          <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-signal">
+            {t('invite_privacy_notice')}
+          </Link>
+        </p>
       </form>
 
       <p className="label-mono mt-10 text-fog">{t('invite_title')}</p>

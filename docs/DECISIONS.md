@@ -685,3 +685,30 @@ rather than force-fixed into a regression:
   cards don't link anywhere either. Building a detail view was out of scope
   for this task ("nothing to build for voting itself"), so cards link to the
   gallery listing instead of inventing a new route.
+
+## Privacy Policy
+
+- **New `privacy` CMS domain, not fields tacked onto `legal`.** Same
+  `{ version, pl, en, de }` shape as `legal`, but kept separate because it's
+  a reachable standalone page (`/privacy`), not the blocking first-visit
+  popup Terms is — sharing one `version` counter would mean editing Privacy
+  Policy copy re-triggers the Terms popup for every visitor (or vice versa),
+  which is the wrong coupling. No migration was needed either way: CMS
+  domains are JSON blobs in the existing `site_content` kv table
+  (`modules/cms/config.ts`), so adding one is a pure code change — a new
+  `KEYS`/`SCHEMAS` entry and a `CmsConfig`/`PrivacyConfig` type, nothing at
+  the DB schema level.
+- **AdminCms's existing Legal tab grew a second section** (`privacy`,
+  `tabKey: 'legal'` in the sidebar `SECTIONS` list) rather than a new
+  top-level tab — same edit surface (three-language textarea + version),
+  same `activeSection` filtering pattern already used for
+  hero/announcement/nav/registration and categories/flags/themes.
+- **Reachable via a new `/privacy` route + a footer link**, not the Terms
+  popup. There actually is no existing persistent Terms link anywhere in the
+  app to mirror — Terms is *only* ever shown once via the blocking
+  first-visit popup, with no standalone page. Privacy Policy's footer link
+  (and a line inside the Terms popup pointing to it, and a line on the
+  registration form) is the first persistent legal-document link this app
+  has had; Terms itself still has no equivalent standalone page, which is
+  consistent with what was actually asked (Privacy Policy only) rather than
+  a project to retrofit Terms too.

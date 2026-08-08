@@ -684,8 +684,14 @@ function LocalesTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChan
 }
 
 const LEGAL_LOCALES = ['pl', 'en', 'de'] as const;
+type LegalSection = 'legal' | 'privacy';
 
-function LegalTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange: DirtyReporter }) {
+function LegalTab({
+  config,
+  refetch,
+  activeSection,
+  onDirtyChange,
+}: TabProps & { activeSection?: LegalSection; onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [pl, setPl] = useState(config.legal.pl);
   const [en, setEn] = useState(config.legal.en);
@@ -693,10 +699,21 @@ function LegalTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange
   const [version, setVersion] = useState(config.legal.version);
   const stamp = useSaveStamp();
 
+  const [privacyPl, setPrivacyPl] = useState(config.privacy.pl);
+  const [privacyEn, setPrivacyEn] = useState(config.privacy.en);
+  const [privacyDe, setPrivacyDe] = useState(config.privacy.de);
+  const [privacyVersion, setPrivacyVersion] = useState(config.privacy.version);
+  const privacyStamp = useSaveStamp();
+
   const fields: Record<(typeof LEGAL_LOCALES)[number], [string, (v: string) => void]> = {
     pl: [pl, setPl],
     en: [en, setEn],
     de: [de, setDe],
+  };
+  const privacyFields: Record<(typeof LEGAL_LOCALES)[number], [string, (v: string) => void]> = {
+    pl: [privacyPl, setPrivacyPl],
+    en: [privacyEn, setPrivacyEn],
+    de: [privacyDe, setPrivacyDe],
   };
 
   useEffect(() => {
@@ -704,6 +721,10 @@ function LegalTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange
     setEn(config.legal.en);
     setDe(config.legal.de);
     setVersion(config.legal.version);
+    setPrivacyPl(config.privacy.pl);
+    setPrivacyEn(config.privacy.en);
+    setPrivacyDe(config.privacy.de);
+    setPrivacyVersion(config.privacy.version);
   }, [config]);
 
   useEffect(() => {
@@ -712,6 +733,25 @@ function LegalTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange
       pl !== config.legal.pl || en !== config.legal.en || de !== config.legal.de || version !== config.legal.version
     );
   }, [pl, en, de, version, config.legal.pl, config.legal.en, config.legal.de, config.legal.version]);
+
+  useEffect(() => {
+    onDirtyChange(
+      'privacy',
+      privacyPl !== config.privacy.pl ||
+        privacyEn !== config.privacy.en ||
+        privacyDe !== config.privacy.de ||
+        privacyVersion !== config.privacy.version
+    );
+  }, [
+    privacyPl,
+    privacyEn,
+    privacyDe,
+    privacyVersion,
+    config.privacy.pl,
+    config.privacy.en,
+    config.privacy.de,
+    config.privacy.version,
+  ]);
 
   async function save() {
     await trpc.cms.setConfig.mutate({
@@ -723,35 +763,84 @@ function LegalTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange
     stamp.flash();
   }
 
+  async function savePrivacy() {
+    await trpc.cms.setConfig.mutate({
+      key: 'privacy',
+      value: { pl: privacyPl, en: privacyEn, de: privacyDe, version: privacyVersion },
+      expectedUpdatedAt: config.privacy.updatedAt,
+    });
+    await refetch();
+    privacyStamp.flash();
+  }
+
+  const showLegal = !activeSection || activeSection === 'legal';
+  const showPrivacy = !activeSection || activeSection === 'privacy';
+
   return (
-    <div className="space-y-4">
-      <p className="label-mono text-blood">{t('admin_cms_legal_placeholder_warning')}</p>
-      {LEGAL_LOCALES.map((loc) => {
-        const [value, setValue] = fields[loc];
-        return (
-          <div key={loc}>
-            <label className="label-mono mb-1 block text-smoke">
-              {t('admin_cms_legal_text')} — {loc.toUpperCase()}
-            </label>
-            <textarea className="input mb-3 min-h-64" value={value} onChange={(e) => setValue(e.target.value)} />
+    <div className="space-y-8">
+      {showLegal && (
+        <section>
+          <p className="label-mono mb-3 text-blood">{t('admin_cms_legal_placeholder_warning')}</p>
+          {LEGAL_LOCALES.map((loc) => {
+            const [value, setValue] = fields[loc];
+            return (
+              <div key={loc}>
+                <label className="label-mono mb-1 block text-smoke">
+                  {t('admin_cms_legal_text')} — {loc.toUpperCase()}
+                </label>
+                <textarea className="input mb-3 min-h-64" value={value} onChange={(e) => setValue(e.target.value)} />
+              </div>
+            );
+          })}
+          <label className="label-mono mb-1 block text-smoke">{t('admin_cms_legal_version')}</label>
+          <input
+            type="number"
+            min={1}
+            className="input mb-3 max-w-xs"
+            value={version}
+            onChange={(e) => setVersion(Math.max(1, Number(e.target.value)))}
+          />
+          <p className="label-mono mb-3 text-smoke">{t('admin_cms_legal_version_hint')}</p>
+          <div className="flex items-center gap-3">
+            <button className="btn btn-primary" onClick={save}>
+              {t('admin_cms_save')}
+            </button>
+            {stamp.saved && <Stamp label={t('admin_cms_saved')} />}
           </div>
-        );
-      })}
-      <label className="label-mono mb-1 block text-smoke">{t('admin_cms_legal_version')}</label>
-      <input
-        type="number"
-        min={1}
-        className="input mb-3 max-w-xs"
-        value={version}
-        onChange={(e) => setVersion(Math.max(1, Number(e.target.value)))}
-      />
-      <p className="label-mono mb-3 text-smoke">{t('admin_cms_legal_version_hint')}</p>
-      <div className="flex items-center gap-3">
-        <button className="btn btn-primary" onClick={save}>
-          {t('admin_cms_save')}
-        </button>
-        {stamp.saved && <Stamp label={t('admin_cms_saved')} />}
-      </div>
+        </section>
+      )}
+
+      {showPrivacy && (
+        <section className={showLegal ? 'border-t border-fog pt-6' : ''}>
+          <h3 className="label-mono mb-3">{t('admin_cms_tab_privacy')}</h3>
+          {LEGAL_LOCALES.map((loc) => {
+            const [value, setValue] = privacyFields[loc];
+            return (
+              <div key={loc}>
+                <label className="label-mono mb-1 block text-smoke">
+                  {t('admin_cms_privacy_text')} — {loc.toUpperCase()}
+                </label>
+                <textarea className="input mb-3 min-h-64" value={value} onChange={(e) => setValue(e.target.value)} />
+              </div>
+            );
+          })}
+          <label className="label-mono mb-1 block text-smoke">{t('admin_cms_privacy_version')}</label>
+          <input
+            type="number"
+            min={1}
+            className="input mb-3 max-w-xs"
+            value={privacyVersion}
+            onChange={(e) => setPrivacyVersion(Math.max(1, Number(e.target.value)))}
+          />
+          <p className="label-mono mb-3 text-smoke">{t('admin_cms_privacy_version_hint')}</p>
+          <div className="flex items-center gap-3">
+            <button className="btn btn-primary" onClick={savePrivacy}>
+              {t('admin_cms_save')}
+            </button>
+            {privacyStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -783,6 +872,7 @@ const SECTIONS = [
   { key: 'pricing', tabKey: 'pricing', labelKey: 'admin_cms_tab_pricing' },
   { key: 'locales', tabKey: 'locales', labelKey: 'admin_cms_tab_locales' },
   { key: 'legal', tabKey: 'legal', labelKey: 'admin_cms_tab_legal' },
+  { key: 'privacy', tabKey: 'legal', labelKey: 'admin_cms_tab_privacy' },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]['key'];
@@ -893,7 +983,14 @@ export function AdminCms() {
               )}
               {tab === 'pricing' && <PricingTab config={config} refetch={refetch} onDirtyChange={markDirty} />}
               {tab === 'locales' && <LocalesTab config={config} refetch={refetch} onDirtyChange={markDirty} />}
-              {tab === 'legal' && <LegalTab config={config} refetch={refetch} onDirtyChange={markDirty} />}
+              {tab === 'legal' && (
+                <LegalTab
+                  config={config}
+                  refetch={refetch}
+                  activeSection={isDesktop ? (section as LegalSection) : undefined}
+                  onDirtyChange={markDirty}
+                />
+              )}
             </>
           )}
         </div>

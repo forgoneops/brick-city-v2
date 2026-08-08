@@ -237,5 +237,13 @@
   "idle_modal_stay": "Zostań zalogowany",
   "login_idle_logout_message": "ZOSTAŁEŚ WYLOGOWANY Z POWODU BEZCZYNNOŚCI.",
   "home_feed_title": "Z ULICY",
-  "home_feed_empty": "JESZCZE NIC NIE WISI. WRÓĆ PÓŹNIEJ."
+  "home_feed_empty": "JESZCZE NIC NIE WISI. WRÓĆ PÓŹNIEJ.",
+  "admin_cms_tab_privacy": "Polityka prywatności",
+  "admin_cms_privacy_text": "Tekst Polityki Prywatności",
+  "admin_cms_privacy_version": "Wersja",
+  "admin_cms_privacy_version_hint": "Zwiększ po istotnej zmianie treści.",
+  "privacy_page_title": "Polityka prywatności",
+  "footer_privacy_link": "Polityka prywatności",
+  "legal_modal_privacy_link": "Przeczytaj Politykę Prywatności",
+  "invite_privacy_notice": "Rejestrując się, potwierdzasz zapoznanie z naszą Polityką Prywatności."
 }

@@ -59,9 +59,23 @@ export function FirstVisitPopups() {
         title={t('legal_modal_title')}
         tag={t('legal_modal_tag')}
         footer={
-          <button type="button" className="btn btn-primary" onClick={acceptLegal}>
-            {t('legal_modal_accept')}
-          </button>
+          <div className="flex w-full items-center justify-between gap-3">
+            {/* Opens in a new tab, not an in-page Link — this modal has no
+                backdrop/Escape dismiss by design (see Modal.tsx), so
+                navigating the current tab away would just leave it stuck on
+                screen over whatever route loads underneath. */}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="label-mono text-smoke hover:text-signal"
+            >
+              {t('legal_modal_privacy_link')}
+            </a>
+            <button type="button" className="btn btn-primary" onClick={acceptLegal}>
+              {t('legal_modal_accept')}
+            </button>
+          </div>
         }
       >
         {legalText}

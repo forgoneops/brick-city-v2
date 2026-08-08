@@ -237,5 +237,13 @@
   "idle_modal_stay": "Stay logged in",
   "login_idle_logout_message": "YOU WERE LOGGED OUT DUE TO INACTIVITY.",
   "home_feed_title": "FROM THE STREETS",
-  "home_feed_empty": "NOTHING LIVE YET. CHECK BACK SOON."
+  "home_feed_empty": "NOTHING LIVE YET. CHECK BACK SOON.",
+  "admin_cms_tab_privacy": "Privacy Policy",
+  "admin_cms_privacy_text": "Privacy Policy text",
+  "admin_cms_privacy_version": "Version",
+  "admin_cms_privacy_version_hint": "Increase this after a meaningful update to the text.",
+  "privacy_page_title": "Privacy Policy",
+  "footer_privacy_link": "Privacy Policy",
+  "legal_modal_privacy_link": "Read the Privacy Policy",
+  "invite_privacy_notice": "Registering means you've read our Privacy Policy."
 }

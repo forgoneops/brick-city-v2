@@ -224,6 +224,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-fog px-4 py-6 md:ml-44">
         <p className="label-mono text-center">BRICK CITY MASHIN' / EST. ON CONCRETE</p>
+        <p className="label-mono mt-2 text-center">
+          <Link to="/privacy" className="text-smoke hover:text-signal">
+            {t('footer_privacy_link')}
+          </Link>
+        </p>
       </footer>
 
       {/* Mobile bottom bar */}

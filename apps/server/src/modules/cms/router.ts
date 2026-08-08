@@ -17,6 +17,7 @@ import {
   localeOverridesConfigSchema,
   navConfigSchema,
   pricingConfigSchema,
+  privacyConfigSchema,
   registrationConfigSchema,
   setDomainConfig,
   setPricingConfig,
@@ -34,6 +35,7 @@ const setConfigInput = z.discriminatedUnion('key', [
   z.object({ key: z.literal('localeOverrides'), value: localeOverridesConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
   z.object({ key: z.literal('pricing'), value: pricingConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
   z.object({ key: z.literal('legal'), value: legalConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
+  z.object({ key: z.literal('privacy'), value: privacyConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
   z.object({ key: z.literal('registration'), value: registrationConfigSchema, expectedUpdatedAt: nullableIsoString.optional() }),
 ]);
 

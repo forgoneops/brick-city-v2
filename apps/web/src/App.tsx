@@ -14,6 +14,7 @@ import { Invite } from './pages/Invite.js';
 import { Invites } from './pages/Invites.js';
 import { Chat } from './pages/Chat.js';
 import { PublicProfile } from './pages/PublicProfile.js';
+import { PrivacyPolicy } from './pages/PrivacyPolicy.js';
 import { Admin } from './pages/Admin.js';
 import { AdminCms } from './pages/AdminCms.js';
 import { PublicPage } from './pages/PublicPage.js';
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/invites" element={<Invites />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/u/:nick" element={<PublicProfile />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/cms" element={<AdminCms />} />
         <Route path="/pages/:slug" element={<PublicPage />} />
