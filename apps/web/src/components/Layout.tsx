@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon, type IconName } from './Icon.js';
 import { PaywallGate } from './PaywallGate.js';
 import { FirstVisitPopups } from './FirstVisitPopups.js';
+import { UpdateBanner } from './UpdateBanner.js';
 import { useT, type Locale, LOCALES } from '../i18n/index.js';
 import { useCms } from '../lib/cms.js';
 import { useAuth } from '../lib/session.js';
@@ -107,6 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (isBare) {
     return (
       <div className="min-h-screen bg-ink text-bone">
+        <UpdateBanner />
         <PaywallGate />
         {children}
       </div>
@@ -117,6 +119,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-ink text-bone">
+      <UpdateBanner />
       <PaywallGate />
       <FirstVisitPopups />
       {announcement?.enabled && announcement.text && (

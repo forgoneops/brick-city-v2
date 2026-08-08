@@ -1,3 +1,43 @@
+# Post-launch — PWA update-available banner
+
+- **This mechanism only ever fires when `sw.js`'s own bytes change.**
+  Browsers detect a service worker update by byte-comparing a fresh fetch of
+  the registered script URL against the currently-installed worker — an app
+  bundle change alone (any amount of React/route/component code) never
+  triggers `updatefound`, only a literal edit to `apps/web/public/sw.js`
+  does. `nginx.conf` already sets `Cache-Control: no-cache` on `/sw.js`
+  specifically so that comparison always sees the real current file, not a
+  stale cached one — this feature depends on that already being true.
+  Practical consequence for future deploys: a routine app-only change will
+  never surface this banner to an already-open PWA session; only a deploy
+  that also touches `sw.js` (even a one-line version-marker comment) will.
+  Documented here because it's easy to ship a change, see no banner appear
+  anywhere, and wrongly conclude the feature is broken.
+- **Found and fixed a real timing bug before shipping, not just written and
+  assumed**: the first draft captured `hadController` once, synchronously,
+  before the very first `register()` call — meaning it would only ever
+  correctly detect an update discovered on a **new** page load following an
+  earlier session, never a live update arriving while a tab from someone's
+  very first-ever visit stays open (the exact scenario the verification
+  step tests: log in once, keep the tab open, deploy again, watch the
+  banner appear with no reload). Fixed by reading
+  `navigator.serviceWorker.controller` fresh inside the `updatefound`
+  handler instead — correct in both cases, since by the time *any* real
+  update's `updatefound` fires, the previously-installed worker has always
+  already claimed the page (`clients.claim()` on activate), regardless of
+  whether that installation happened on this exact page load or an earlier
+  one.
+- **Banner is `fixed`, not in normal document flow** — `Layout.tsx` has two
+  render branches (bare login/invite screens with no sidebar, and the
+  normal sidebared chrome); a `fixed` bar renders identically in both
+  without needing a per-branch sidebar-width offset to keep in sync, the
+  same reason `PaywallGate` is already `fixed` and rendered uniformly in
+  both branches.
+- **Separate dismiss control, not just the reload button** — the brief
+  explicitly calls this a "dismissible" banner; a bare reload button isn't
+  a way to say "not now." Added a plain text `update_available_dismiss`
+  action next to it rather than overloading a single button's meaning.
+
 # Post-launch — map showed "MEMBERS ONLY" for everyone, including admins (real bug)
 
 - **Root cause was not any of the four hypothesized causes** (server not

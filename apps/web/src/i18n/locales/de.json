@@ -216,5 +216,8 @@
   "admin_cms_legal_version_hint": "Erhöhen, um den Popup allen erneut zu zeigen, auch bei einer kleinen Textänderung.",
   "admin_cms_registration_title": "Registrierung",
   "admin_cms_registration_invite_only": "Registrierung nur auf Einladung",
-  "map_no_pins": "NOCH KEINE PINS"
+  "map_no_pins": "NOCH KEINE PINS",
+  "update_available_message": "NEUE SCHICHT IST DA — NEU LADEN, UM SIE ZU SEHEN.",
+  "update_available_action": "Neu laden",
+  "update_available_dismiss": "Später"
 }

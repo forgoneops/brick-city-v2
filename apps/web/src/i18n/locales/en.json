@@ -216,5 +216,8 @@
   "admin_cms_legal_version_hint": "Bump this to re-show the popup to everyone, even for a small text change.",
   "admin_cms_registration_title": "Registration",
   "admin_cms_registration_invite_only": "Invite-only registration",
-  "map_no_pins": "NO PINS YET"
+  "map_no_pins": "NO PINS YET",
+  "update_available_message": "NEW LAYER DROPPED — RELOAD TO SEE IT.",
+  "update_available_action": "Reload",
+  "update_available_dismiss": "Later"
 }

@@ -216,5 +216,8 @@
   "admin_cms_legal_version_hint": "Zwiększ, żeby pokazać popup wszystkim ponownie, nawet przy drobnej zmianie tekstu.",
   "admin_cms_registration_title": "Rejestracja",
   "admin_cms_registration_invite_only": "Rejestracja tylko na zaproszenia",
-  "map_no_pins": "BRAK PINEZEK. NA RAZIE."
+  "map_no_pins": "BRAK PINEZEK. NA RAZIE.",
+  "update_available_message": "WYSZŁA NOWA WARSTWA — ODŚWIEŻ, ŻEBY JĄ ZOBACZYĆ.",
+  "update_available_action": "Odśwież",
+  "update_available_dismiss": "Później"
 }
