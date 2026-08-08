@@ -1,4 +1,3 @@
-// build marker: 2026-08-08T11:17:11.361Z (debug run) — no-op
 // Phase 0 service worker stub — passthrough only, plus Web Push handling.
 self.addEventListener('install', () => {
   self.skipWaiting();

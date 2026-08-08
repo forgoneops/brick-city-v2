@@ -30,13 +30,10 @@ function registerServiceWorker() {
         // across separate page loads, missing the same-tab-stays-open case
         // this feature exists for.
         const hadController = Boolean(navigator.serviceWorker.controller);
-        console.log('[sw-debug] updatefound, hadController=', hadController); // TEMP
         const installing = registration.installing;
         if (!installing) return;
         installing.addEventListener('statechange', () => {
-          console.log('[sw-debug] statechange ->', installing.state); // TEMP
           if (installing.state === 'activated' && hadController) {
-            console.log('[sw-debug] calling setUpdateAvailable()'); // TEMP
             setUpdateAvailable();
           }
         });
@@ -63,7 +60,7 @@ if (localStorage.getItem('bcm-nightwalk') === '1') {
   document.documentElement.dataset.nightwalk = '1';
 }
 
-createRoot(document.getElementById('root')!, { identifierPrefix: 'b1786187195695-' }).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <CmsProvider>
