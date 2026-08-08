@@ -29,7 +29,16 @@ interface TabProps {
   refetch: () => Promise<void>;
 }
 
-function ContentTab({ config, refetch }: TabProps) {
+type ContentSection = 'hero' | 'announcement' | 'nav' | 'registration';
+type CategoriesSection = 'categories' | 'flags' | 'themes';
+type DirtyReporter = (key: string, dirty: boolean) => void;
+
+function ContentTab({
+  config,
+  refetch,
+  activeSection,
+  onDirtyChange,
+}: TabProps & { activeSection?: ContentSection; onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [hero, setHero] = useState(config.hero);
   const [announcement, setAnnouncement] = useState(config.announcement);
@@ -46,6 +55,24 @@ function ContentTab({ config, refetch }: TabProps) {
     setNav(config.nav.items);
     setRegistration(config.registration);
   }, [config]);
+
+  useEffect(() => {
+    onDirtyChange('hero', JSON.stringify(hero) !== JSON.stringify(config.hero));
+  }, [hero, config.hero]);
+  useEffect(() => {
+    onDirtyChange('announcement', JSON.stringify(announcement) !== JSON.stringify(config.announcement));
+  }, [announcement, config.announcement]);
+  useEffect(() => {
+    onDirtyChange('nav', JSON.stringify(nav) !== JSON.stringify(config.nav.items));
+  }, [nav, config.nav.items]);
+  useEffect(() => {
+    onDirtyChange('registration', JSON.stringify(registration) !== JSON.stringify(config.registration));
+  }, [registration, config.registration]);
+
+  const showHero = !activeSection || activeSection === 'hero';
+  const showAnnouncement = !activeSection || activeSection === 'announcement';
+  const showNav = !activeSection || activeSection === 'nav';
+  const showRegistration = !activeSection || activeSection === 'registration';
 
   async function saveHero() {
     await trpc.cms.setConfig.mutate({
@@ -97,114 +124,122 @@ function ContentTab({ config, refetch }: TabProps) {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
-          <h3 className="label-mono mb-3">{t('admin_cms_tab_content').toUpperCase()}</h3>
-          <label className="label-mono mb-1 block text-smoke">{t('admin_cms_hero_title')}</label>
-          <textarea
-            className="input mb-3 min-h-16"
-            value={hero.title}
-            onChange={(e) => setHero({ ...hero, title: e.target.value })}
-          />
-          <label className="label-mono mb-1 block text-smoke">{t('admin_cms_hero_subtitle')}</label>
+      {showHero && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section>
+            <h3 className="label-mono mb-3">{t('admin_cms_tab_content').toUpperCase()}</h3>
+            <label className="label-mono mb-1 block text-smoke">{t('admin_cms_hero_title')}</label>
+            <textarea
+              className="input mb-3 min-h-16"
+              value={hero.title}
+              onChange={(e) => setHero({ ...hero, title: e.target.value })}
+            />
+            <label className="label-mono mb-1 block text-smoke">{t('admin_cms_hero_subtitle')}</label>
+            <input
+              className="input mb-3"
+              value={hero.subtitle}
+              onChange={(e) => setHero({ ...hero, subtitle: e.target.value })}
+            />
+            <label className="label-mono mb-1 block text-smoke">{t('admin_cms_hero_cta')}</label>
+            <input className="input mb-3" value={hero.cta} onChange={(e) => setHero({ ...hero, cta: e.target.value })} />
+            <div className="flex items-center gap-3">
+              <button className="btn btn-primary" onClick={saveHero}>
+                {t('admin_cms_save')}
+              </button>
+              {heroStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="label-mono mb-3">{t('admin_cms_preview')}</h3>
+            <div className="relative h-64 overflow-hidden border border-fog bg-ink">
+              <div
+                className="absolute left-0 top-0 origin-top-left"
+                style={{ transform: 'scale(0.28)', width: '357%', height: '357%' }}
+              >
+                <Home heroOverride={hero} />
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showAnnouncement && (
+        <section className={showHero ? 'border-t border-fog pt-6' : ''}>
+          <h3 className="label-mono mb-3">{t('admin_cms_announcement_text')}</h3>
           <input
             className="input mb-3"
-            value={hero.subtitle}
-            onChange={(e) => setHero({ ...hero, subtitle: e.target.value })}
+            value={announcement.text}
+            onChange={(e) => setAnnouncement({ ...announcement, text: e.target.value })}
           />
-          <label className="label-mono mb-1 block text-smoke">{t('admin_cms_hero_cta')}</label>
-          <input className="input mb-3" value={hero.cta} onChange={(e) => setHero({ ...hero, cta: e.target.value })} />
+          <div className="mb-3">
+            <Switch
+              checked={announcement.enabled}
+              onChange={(checked) => setAnnouncement({ ...announcement, enabled: checked })}
+              label={t('admin_cms_announcement_enabled')}
+            />
+          </div>
+          <div className="mb-3">
+            <Switch
+              checked={announcement.showAsPopup}
+              onChange={(checked) => setAnnouncement({ ...announcement, showAsPopup: checked })}
+              label={t('admin_cms_announcement_popup')}
+            />
+          </div>
           <div className="flex items-center gap-3">
-            <button className="btn btn-primary" onClick={saveHero}>
+            <button className="btn btn-primary" onClick={saveAnnouncement}>
               {t('admin_cms_save')}
             </button>
-            {heroStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+            {announcementStamp.saved && <Stamp label={t('admin_cms_saved')} />}
           </div>
         </section>
+      )}
 
-        <section>
-          <h3 className="label-mono mb-3">{t('admin_cms_preview')}</h3>
-          <div className="relative h-64 overflow-hidden border border-fog bg-ink">
-            <div
-              className="absolute left-0 top-0 origin-top-left"
-              style={{ transform: 'scale(0.28)', width: '357%', height: '357%' }}
-            >
-              <Home heroOverride={hero} />
-            </div>
+      {showNav && (
+        <section className={showHero || showAnnouncement ? 'border-t border-fog pt-6' : ''}>
+          <h3 className="label-mono mb-3">{t('admin_cms_nav_order')}</h3>
+          <ul className="divide-y divide-fog border border-fog">
+            {nav.map((item, i) => (
+              <li key={item.key} className="flex items-center justify-between gap-3 px-3 py-2">
+                <Switch checked={item.visible} onChange={() => toggleNavVisible(i)} label={t(item.key)} />
+                <div className="flex gap-1">
+                  <button className="btn" disabled={i === 0} onClick={() => moveNav(i, -1)}>
+                    UP
+                  </button>
+                  <button className="btn" disabled={i === nav.length - 1} onClick={() => moveNav(i, 1)}>
+                    DOWN
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center gap-3">
+            <button className="btn btn-primary" onClick={saveNav}>
+              {t('admin_cms_save')}
+            </button>
+            {navStamp.saved && <Stamp label={t('admin_cms_saved')} />}
           </div>
         </section>
-      </div>
+      )}
 
-      <section className="border-t border-fog pt-6">
-        <h3 className="label-mono mb-3">{t('admin_cms_announcement_text')}</h3>
-        <input
-          className="input mb-3"
-          value={announcement.text}
-          onChange={(e) => setAnnouncement({ ...announcement, text: e.target.value })}
-        />
-        <div className="mb-3">
-          <Switch
-            checked={announcement.enabled}
-            onChange={(checked) => setAnnouncement({ ...announcement, enabled: checked })}
-            label={t('admin_cms_announcement_enabled')}
-          />
-        </div>
-        <div className="mb-3">
-          <Switch
-            checked={announcement.showAsPopup}
-            onChange={(checked) => setAnnouncement({ ...announcement, showAsPopup: checked })}
-            label={t('admin_cms_announcement_popup')}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="btn btn-primary" onClick={saveAnnouncement}>
-            {t('admin_cms_save')}
-          </button>
-          {announcementStamp.saved && <Stamp label={t('admin_cms_saved')} />}
-        </div>
-      </section>
-
-      <section className="border-t border-fog pt-6">
-        <h3 className="label-mono mb-3">{t('admin_cms_nav_order')}</h3>
-        <ul className="divide-y divide-fog border border-fog">
-          {nav.map((item, i) => (
-            <li key={item.key} className="flex items-center justify-between gap-3 px-3 py-2">
-              <Switch checked={item.visible} onChange={() => toggleNavVisible(i)} label={t(item.key)} />
-              <div className="flex gap-1">
-                <button className="btn" disabled={i === 0} onClick={() => moveNav(i, -1)}>
-                  UP
-                </button>
-                <button className="btn" disabled={i === nav.length - 1} onClick={() => moveNav(i, 1)}>
-                  DOWN
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 flex items-center gap-3">
-          <button className="btn btn-primary" onClick={saveNav}>
-            {t('admin_cms_save')}
-          </button>
-          {navStamp.saved && <Stamp label={t('admin_cms_saved')} />}
-        </div>
-      </section>
-
-      <section className="border-t border-fog pt-6">
-        <h3 className="label-mono mb-3">{t('admin_cms_registration_title')}</h3>
-        <div className="mb-3">
-          <Switch
-            checked={registration.inviteOnly}
-            onChange={(checked) => setRegistration({ ...registration, inviteOnly: checked })}
-            label={t('admin_cms_registration_invite_only')}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="btn btn-primary" onClick={saveRegistration}>
-            {t('admin_cms_save')}
-          </button>
-          {registrationStamp.saved && <Stamp label={t('admin_cms_saved')} />}
-        </div>
-      </section>
+      {showRegistration && (
+        <section className={showHero || showAnnouncement || showNav ? 'border-t border-fog pt-6' : ''}>
+          <h3 className="label-mono mb-3">{t('admin_cms_registration_title')}</h3>
+          <div className="mb-3">
+            <Switch
+              checked={registration.inviteOnly}
+              onChange={(checked) => setRegistration({ ...registration, inviteOnly: checked })}
+              label={t('admin_cms_registration_invite_only')}
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="btn btn-primary" onClick={saveRegistration}>
+              {t('admin_cms_save')}
+            </button>
+            {registrationStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -218,7 +253,7 @@ interface PageRow {
   createdAt: string;
 }
 
-function PagesTab() {
+function PagesTab({ onDirtyChange }: { onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [pages, setPages] = useState<PageRow[]>([]);
   const [form, setForm] = useState<{ slug: string; title: string; body: string; published: boolean; originalUpdatedAt: string | null } | null>(null);
@@ -230,6 +265,10 @@ function PagesTab() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    onDirtyChange('pages', form !== null);
+  }, [form]);
 
   function startNew() {
     setForm({ slug: '', title: '', body: '', published: false, originalUpdatedAt: null });
@@ -329,7 +368,12 @@ function PagesTab() {
   );
 }
 
-function CategoriesFlagsTab({ config, refetch }: TabProps) {
+function CategoriesFlagsTab({
+  config,
+  refetch,
+  activeSection,
+  onDirtyChange,
+}: TabProps & { activeSection?: CategoriesSection; onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [categories, setCategories] = useState<GalleryCategoryEntry[]>(config.galleryCategories.items);
   const [flags, setFlags] = useState(config.featureFlags.flags);
@@ -344,6 +388,20 @@ function CategoriesFlagsTab({ config, refetch }: TabProps) {
     setFlags(config.featureFlags.flags);
     setThemes(config.battleThemes.items);
   }, [config]);
+
+  useEffect(() => {
+    onDirtyChange('categories', JSON.stringify(categories) !== JSON.stringify(config.galleryCategories.items));
+  }, [categories, config.galleryCategories.items]);
+  useEffect(() => {
+    onDirtyChange('flags', JSON.stringify(flags) !== JSON.stringify(config.featureFlags.flags));
+  }, [flags, config.featureFlags.flags]);
+  useEffect(() => {
+    onDirtyChange('themes', JSON.stringify(themes) !== JSON.stringify(config.battleThemes.items));
+  }, [themes, config.battleThemes.items]);
+
+  const showCategories = !activeSection || activeSection === 'categories';
+  const showFlags = !activeSection || activeSection === 'flags';
+  const showThemes = !activeSection || activeSection === 'themes';
 
   function moveCategory(index: number, dir: -1 | 1) {
     const next = [...categories];
@@ -390,84 +448,90 @@ function CategoriesFlagsTab({ config, refetch }: TabProps) {
 
   return (
     <div className="space-y-8">
-      <section>
-        <h3 className="label-mono mb-3">{t('admin_cms_categories')}</h3>
-        <ul className="divide-y divide-fog border border-fog">
-          {categories.map((c, i) => (
-            <li key={c.category} className="flex items-center justify-between gap-3 px-3 py-2">
-              <Switch checked={c.visible} onChange={() => toggleCategoryVisible(i)} label={c.category} />
-              <div className="flex gap-1">
-                <button className="btn" disabled={i === 0} onClick={() => moveCategory(i, -1)}>
-                  UP
-                </button>
-                <button className="btn" disabled={i === categories.length - 1} onClick={() => moveCategory(i, 1)}>
-                  DOWN
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 flex items-center gap-3">
-          <button className="btn btn-primary" onClick={saveCategories}>
-            {t('admin_cms_save')}
-          </button>
-          {catStamp.saved && <Stamp label={t('admin_cms_saved')} />}
-        </div>
-      </section>
+      {showCategories && (
+        <section>
+          <h3 className="label-mono mb-3">{t('admin_cms_categories')}</h3>
+          <ul className="divide-y divide-fog border border-fog">
+            {categories.map((c, i) => (
+              <li key={c.category} className="flex items-center justify-between gap-3 px-3 py-2">
+                <Switch checked={c.visible} onChange={() => toggleCategoryVisible(i)} label={c.category} />
+                <div className="flex gap-1">
+                  <button className="btn" disabled={i === 0} onClick={() => moveCategory(i, -1)}>
+                    UP
+                  </button>
+                  <button className="btn" disabled={i === categories.length - 1} onClick={() => moveCategory(i, 1)}>
+                    DOWN
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center gap-3">
+            <button className="btn btn-primary" onClick={saveCategories}>
+              {t('admin_cms_save')}
+            </button>
+            {catStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+          </div>
+        </section>
+      )}
 
-      <section className="border-t border-fog pt-6">
-        <h3 className="label-mono mb-3">{t('admin_cms_flags')}</h3>
-        <ul className="divide-y divide-fog border border-fog">
-          {Object.entries(flags).map(([key, value]) => (
-            <li key={key} className="label-mono flex items-center justify-between px-3 py-2">
-              <span className="text-bone">{key.toUpperCase()}</span>
-              <button
-                className={`border px-3 py-1 ${value ? 'border-signal text-signal' : 'border-fog text-smoke'}`}
-                onClick={() => toggleFlag(key)}
-              >
-                {value ? 'ENABLED' : 'DISABLED'}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 flex items-center gap-3">
-          <button className="btn btn-primary" onClick={saveFlags}>
-            {t('admin_cms_save')}
-          </button>
-          {flagStamp.saved && <Stamp label={t('admin_cms_saved')} />}
-        </div>
-      </section>
+      {showFlags && (
+        <section className={showCategories ? 'border-t border-fog pt-6' : ''}>
+          <h3 className="label-mono mb-3">{t('admin_cms_flags')}</h3>
+          <ul className="divide-y divide-fog border border-fog">
+            {Object.entries(flags).map(([key, value]) => (
+              <li key={key} className="label-mono flex items-center justify-between px-3 py-2">
+                <span className="text-bone">{key.toUpperCase()}</span>
+                <button
+                  className={`border px-3 py-1 ${value ? 'border-signal text-signal' : 'border-fog text-smoke'}`}
+                  onClick={() => toggleFlag(key)}
+                >
+                  {value ? 'ENABLED' : 'DISABLED'}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center gap-3">
+            <button className="btn btn-primary" onClick={saveFlags}>
+              {t('admin_cms_save')}
+            </button>
+            {flagStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+          </div>
+        </section>
+      )}
 
-      <section className="border-t border-fog pt-6">
-        <h3 className="label-mono mb-3">{t('admin_cms_battle_themes')}</h3>
-        <ul className="divide-y divide-fog border border-fog">
-          {themes.map((theme, i) => (
-            <li key={`${theme}-${i}`} className="label-mono flex items-center justify-between px-3 py-2">
-              <span className="text-bone">{theme}</span>
-              <button className="btn" onClick={() => removeTheme(i)}>
-                {t('forum_delete')}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 flex gap-2">
-          <input className="input" value={newTheme} onChange={(e) => setNewTheme(e.target.value)} />
-          <button className="btn" onClick={addTheme}>
-            {t('admin_cms_battle_themes_add')}
-          </button>
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <button className="btn btn-primary" onClick={saveThemes}>
-            {t('admin_cms_save')}
-          </button>
-          {themeStamp.saved && <Stamp label={t('admin_cms_saved')} />}
-        </div>
-      </section>
+      {showThemes && (
+        <section className={showCategories || showFlags ? 'border-t border-fog pt-6' : ''}>
+          <h3 className="label-mono mb-3">{t('admin_cms_battle_themes')}</h3>
+          <ul className="divide-y divide-fog border border-fog">
+            {themes.map((theme, i) => (
+              <li key={`${theme}-${i}`} className="label-mono flex items-center justify-between px-3 py-2">
+                <span className="text-bone">{theme}</span>
+                <button className="btn" onClick={() => removeTheme(i)}>
+                  {t('forum_delete')}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex gap-2">
+            <input className="input" value={newTheme} onChange={(e) => setNewTheme(e.target.value)} />
+            <button className="btn" onClick={addTheme}>
+              {t('admin_cms_battle_themes_add')}
+            </button>
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            <button className="btn btn-primary" onClick={saveThemes}>
+              {t('admin_cms_save')}
+            </button>
+            {themeStamp.saved && <Stamp label={t('admin_cms_saved')} />}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
-function PricingTab({ config, refetch }: TabProps) {
+function PricingTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [price, setPrice] = useState(config.pricing.pricePln);
   const [enabled, setEnabled] = useState(config.pricing.paywallEnabled);
@@ -477,6 +541,10 @@ function PricingTab({ config, refetch }: TabProps) {
     setPrice(config.pricing.pricePln);
     setEnabled(config.pricing.paywallEnabled);
   }, [config]);
+
+  useEffect(() => {
+    onDirtyChange('pricing', price !== config.pricing.pricePln || enabled !== config.pricing.paywallEnabled);
+  }, [price, enabled, config.pricing.pricePln, config.pricing.paywallEnabled]);
 
   async function save() {
     await trpc.cms.setConfig.mutate({
@@ -519,12 +587,16 @@ function PricingTab({ config, refetch }: TabProps) {
 
 const LOCALE_CHOICES = ['en', 'pl', 'de'] as const;
 
-function LocalesTab({ config, refetch }: TabProps) {
+function LocalesTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [locale, setLocale] = useState<(typeof LOCALE_CHOICES)[number]>('en');
   const [search, setSearch] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const stamp = useSaveStamp();
+
+  useEffect(() => {
+    onDirtyChange('locales', Object.keys(drafts).length > 0);
+  }, [drafts]);
 
   const bundled = DICTIONARIES[locale];
   const overrides = config.localeOverrides.values[locale] ?? {};
@@ -613,7 +685,7 @@ function LocalesTab({ config, refetch }: TabProps) {
 
 const LEGAL_LOCALES = ['pl', 'en', 'de'] as const;
 
-function LegalTab({ config, refetch }: TabProps) {
+function LegalTab({ config, refetch, onDirtyChange }: TabProps & { onDirtyChange: DirtyReporter }) {
   const { t } = useT();
   const [pl, setPl] = useState(config.legal.pl);
   const [en, setEn] = useState(config.legal.en);
@@ -633,6 +705,13 @@ function LegalTab({ config, refetch }: TabProps) {
     setDe(config.legal.de);
     setVersion(config.legal.version);
   }, [config]);
+
+  useEffect(() => {
+    onDirtyChange(
+      'legal',
+      pl !== config.legal.pl || en !== config.legal.en || de !== config.legal.de || version !== config.legal.version
+    );
+  }, [pl, en, de, version, config.legal.pl, config.legal.en, config.legal.de, config.legal.version]);
 
   async function save() {
     await trpc.cms.setConfig.mutate({
@@ -686,39 +765,139 @@ const TABS = [
   { key: 'legal', labelKey: 'admin_cms_tab_legal' },
 ] as const;
 
+type TabKey = (typeof TABS)[number]['key'];
+
+// Fine-grained sidebar list for the desktop shell — several of these live
+// inside the same TABS group above (e.g. hero/announcement/nav/registration
+// are all part of the 'content' tab) but get their own sidebar entry so a
+// desktop admin can jump straight to one without scrolling past the rest.
+const SECTIONS = [
+  { key: 'hero', tabKey: 'content', labelKey: 'admin_cms_tab_content' },
+  { key: 'announcement', tabKey: 'content', labelKey: 'admin_cms_announcement_text' },
+  { key: 'nav', tabKey: 'content', labelKey: 'admin_cms_nav_order' },
+  { key: 'registration', tabKey: 'content', labelKey: 'admin_cms_registration_title' },
+  { key: 'pages', tabKey: 'pages', labelKey: 'admin_cms_tab_pages' },
+  { key: 'categories', tabKey: 'categories', labelKey: 'admin_cms_categories' },
+  { key: 'flags', tabKey: 'categories', labelKey: 'admin_cms_flags' },
+  { key: 'themes', tabKey: 'categories', labelKey: 'admin_cms_battle_themes' },
+  { key: 'pricing', tabKey: 'pricing', labelKey: 'admin_cms_tab_pricing' },
+  { key: 'locales', tabKey: 'locales', labelKey: 'admin_cms_tab_locales' },
+  { key: 'legal', tabKey: 'legal', labelKey: 'admin_cms_tab_legal' },
+] as const;
+
+type SectionKey = (typeof SECTIONS)[number]['key'];
+
+const FIRST_SECTION_OF_TAB: Record<TabKey, SectionKey> = {
+  content: 'hero',
+  pages: 'pages',
+  categories: 'categories',
+  pricing: 'pricing',
+  locales: 'locales',
+  legal: 'legal',
+};
+
+// md: breakpoint (768px) — matches Layout.tsx's own desktop/mobile split.
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+  return isDesktop;
+}
+
 export function AdminCms() {
   const { t } = useT();
   const { config, loading, refetch } = useCms();
-  const [tab, setTab] = useState<(typeof TABS)[number]['key']>('content');
+  const isDesktop = useIsDesktop();
+  const [tab, setTab] = useState<TabKey>('content');
+  const [section, setSection] = useState<SectionKey>('hero');
+  const [dirty, setDirty] = useState<Partial<Record<SectionKey, boolean>>>({});
+
+  function markDirty(key: string, value: boolean) {
+    setDirty((prev) => (prev[key as SectionKey] === value ? prev : { ...prev, [key]: value }));
+  }
+
+  function selectTab(key: TabKey) {
+    setTab(key);
+    setSection(FIRST_SECTION_OF_TAB[key]);
+  }
+
+  function selectSection(key: SectionKey, tabKey: TabKey) {
+    setTab(tabKey);
+    setSection(key);
+  }
+
+  const tabIsDirty = (key: TabKey) => SECTIONS.some((s) => s.tabKey === key && dirty[s.key]);
 
   return (
     <ModulePage title={t('admin_cms_title')} icon="gate" tag="ADMIN / SITE CMS">
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-fog pb-4">
+      {/* Mobile: unchanged horizontal tab strip, each tab renders its full stacked content. */}
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-fog pb-4 md:hidden">
         {TABS.map((tb) => (
           <button
             key={tb.key}
-            className={`label-mono border px-3 py-1 transition-colors ${
+            className={`label-mono flex items-center gap-2 border px-3 py-1 transition-colors ${
               tab === tb.key ? 'border-signal text-signal' : 'border-fog text-smoke hover:text-bone'
             }`}
-            onClick={() => setTab(tb.key)}
+            onClick={() => selectTab(tb.key)}
           >
             {t(tb.labelKey)}
+            {tabIsDirty(tb.key) && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blood" title="Unsaved changes" />}
           </button>
         ))}
       </div>
 
-      {loading || !config ? (
-        <p className="label-mono text-smoke">LOADING...</p>
-      ) : (
-        <>
-          {tab === 'content' && <ContentTab config={config} refetch={refetch} />}
-          {tab === 'pages' && <PagesTab />}
-          {tab === 'categories' && <CategoriesFlagsTab config={config} refetch={refetch} />}
-          {tab === 'pricing' && <PricingTab config={config} refetch={refetch} />}
-          {tab === 'locales' && <LocalesTab config={config} refetch={refetch} />}
-          {tab === 'legal' && <LegalTab config={config} refetch={refetch} />}
-        </>
-      )}
+      <div className="md:flex md:items-start md:gap-8">
+        {/* Desktop: persistent sidebar, one section at a time, sticky on scroll. */}
+        <aside className="hidden md:block md:w-52 md:shrink-0">
+          <nav className="sticky top-6 flex flex-col gap-1">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => selectSection(s.key, s.tabKey)}
+                className={`flex items-center justify-between gap-2 border-l-2 px-3 py-2 text-left font-mono text-[11px] uppercase tracking-[0.18em] transition-colors ${
+                  section === s.key ? 'border-signal text-signal' : 'border-transparent text-smoke hover:text-bone'
+                }`}
+              >
+                <span>{t(s.labelKey)}</span>
+                {dirty[s.key] && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blood" title="Unsaved changes" />}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {loading || !config ? (
+            <p className="label-mono text-smoke">LOADING...</p>
+          ) : (
+            <>
+              {tab === 'content' && (
+                <ContentTab
+                  config={config}
+                  refetch={refetch}
+                  activeSection={isDesktop ? (section as ContentSection) : undefined}
+                  onDirtyChange={markDirty}
+                />
+              )}
+              {tab === 'pages' && <PagesTab onDirtyChange={markDirty} />}
+              {tab === 'categories' && (
+                <CategoriesFlagsTab
+                  config={config}
+                  refetch={refetch}
+                  activeSection={isDesktop ? (section as CategoriesSection) : undefined}
+                  onDirtyChange={markDirty}
+                />
+              )}
+              {tab === 'pricing' && <PricingTab config={config} refetch={refetch} onDirtyChange={markDirty} />}
+              {tab === 'locales' && <LocalesTab config={config} refetch={refetch} onDirtyChange={markDirty} />}
+              {tab === 'legal' && <LegalTab config={config} refetch={refetch} onDirtyChange={markDirty} />}
+            </>
+          )}
+        </div>
+      </div>
     </ModulePage>
   );
 }
