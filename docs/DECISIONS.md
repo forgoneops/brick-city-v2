@@ -1,3 +1,35 @@
+# Post-launch — header never reflected logged-in state (real bug)
+
+- **Root cause confirmed by direct inspection before touching anything**:
+  `Layout.tsx` and `Home.tsx` never called `useAuth()` at all — login/register
+  updated the token and in-memory user, but nothing in the chrome ever read
+  it, so a successful login and an anonymous visit rendered byte-identical
+  headers. `nav_profile`/`nav_admin`/`nav_logout` i18n keys already existed
+  in all three locales, unused anywhere — a leftover from whoever built the
+  auth flow itself assuming the header would get wired up separately, which
+  never happened.
+- **No new i18n keys needed** — reused the existing unused ones.
+  `nav_profile` -> `mask` icon (matches Profile.tsx's own `ModulePage` icon),
+  `nav_admin` -> `gate` icon (matches Admin.tsx's own icon) — chosen to match
+  each destination page's existing icon, not picked arbitrarily.
+- **Desktop and mobile got separate JSX blocks, not one shared component** —
+  matches this file's existing convention (`navItems.map` is already
+  duplicated once for the sidebar and once for the mobile bottom bar with
+  different markup each time), rather than introducing a new abstraction
+  pattern for just this one case.
+- **Investigated the stated PWA-cache-staleness risk and found nothing to
+  fix**: `sw.js`'s fetch handler is `event.respondWith(fetch(event.request))`
+  — a pure network passthrough, no Cache Storage API used anywhere, so there
+  is no app-shell cache to bust. `skipWaiting()`/`clients.claim()` are
+  already in place regardless. `nginx.conf` already uses the correct
+  pattern independent of the service worker: content-hashed `/assets/*` are
+  `immutable` (safe, since each build's filenames change), while
+  `index.html` itself carries no long-cache header, so a normal reload
+  revalidates and picks up the new bundle reference. Confirmed by comparing
+  `/version` before/after the production deploy on an unmodified browser
+  session, not just by reading the config. No sw.js or nginx change made —
+  correcting course would have been unrequested, unnecessary risk.
+
 # Post-launch — auth.login accepts email or nick
 
 - **Branch is a one-time `z.string().email().safeParse` shape check, not a

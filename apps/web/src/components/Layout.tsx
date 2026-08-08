@@ -6,6 +6,7 @@ import { PaywallGate } from './PaywallGate.js';
 import { FirstVisitPopups } from './FirstVisitPopups.js';
 import { useT, type Locale, LOCALES } from '../i18n/index.js';
 import { useCms } from '../lib/cms.js';
+import { useAuth } from '../lib/session.js';
 import { FEATURES } from '../config/features.js';
 
 interface NavItem {
@@ -97,6 +98,7 @@ function NightWalkToggle() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useT();
   const { config } = useCms();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navItems = useNavItems();
   // Mystery pages render bare — black screen, no chrome (spec §6)
@@ -154,10 +156,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-3 border-t border-fog px-4 py-4">
           <LocaleSwitch />
           <NightWalkToggle />
-          <Link to="/login" className="btn justify-start">
-            <Icon name="mask" size={16} />
-            {t('nav_login')}
-          </Link>
+          {user ? (
+            <>
+              <p className="label-mono text-bone">{user.nick}</p>
+              <Link to="/profile" className="btn justify-start">
+                <Icon name="mask" size={16} />
+                {t('nav_profile')}
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/admin" className="btn justify-start">
+                  <Icon name="gate" size={16} />
+                  {t('nav_admin')}
+                </Link>
+              )}
+              <button type="button" onClick={logout} className="btn justify-start">
+                {t('nav_logout')}
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="btn justify-start">
+              <Icon name="mask" size={16} />
+              {t('nav_login')}
+            </Link>
+          )}
         </div>
       </aside>
 
@@ -169,9 +190,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <LocaleSwitch />
           <NightWalkToggle />
-          <Link to="/login" aria-label={t('nav_login')}>
-            <Icon name="mask" size={20} className="text-smoke" />
-          </Link>
+          {user ? (
+            <>
+              <Link to="/profile" className="label-mono text-bone" aria-label={t('nav_profile')}>
+                {user.nick}
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/admin" aria-label={t('nav_admin')}>
+                  <Icon name="gate" size={20} className="text-smoke" />
+                </Link>
+              )}
+              <button type="button" onClick={logout} aria-label={t('nav_logout')}>
+                <Icon name="eye-off" size={20} className="text-smoke" />
+              </button>
+            </>
+          ) : (
+            <Link to="/login" aria-label={t('nav_login')}>
+              <Icon name="mask" size={20} className="text-smoke" />
+            </Link>
+          )}
         </div>
       </header>
 
