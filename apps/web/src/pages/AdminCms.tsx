@@ -5,6 +5,7 @@ import { trpc } from '../lib/trpc.js';
 import { useCms } from '../lib/cms.js';
 import { ModulePage } from '../components/ModulePage.js';
 import { Stamp } from '../components/Stamp.js';
+import { Switch } from '../components/Switch.js';
 import { useT } from '../i18n/index.js';
 import { Home } from './Home.js';
 import en from '../i18n/locales/en.json';
@@ -141,22 +142,20 @@ function ContentTab({ config, refetch }: TabProps) {
           value={announcement.text}
           onChange={(e) => setAnnouncement({ ...announcement, text: e.target.value })}
         />
-        <label className="label-mono mb-3 flex items-center gap-2 text-bone">
-          <input
-            type="checkbox"
+        <div className="mb-3">
+          <Switch
             checked={announcement.enabled}
-            onChange={(e) => setAnnouncement({ ...announcement, enabled: e.target.checked })}
+            onChange={(checked) => setAnnouncement({ ...announcement, enabled: checked })}
+            label={t('admin_cms_announcement_enabled')}
           />
-          {t('admin_cms_announcement_enabled')}
-        </label>
-        <label className="label-mono mb-3 flex items-center gap-2 text-bone">
-          <input
-            type="checkbox"
+        </div>
+        <div className="mb-3">
+          <Switch
             checked={announcement.showAsPopup}
-            onChange={(e) => setAnnouncement({ ...announcement, showAsPopup: e.target.checked })}
+            onChange={(checked) => setAnnouncement({ ...announcement, showAsPopup: checked })}
+            label={t('admin_cms_announcement_popup')}
           />
-          {t('admin_cms_announcement_popup')}
-        </label>
+        </div>
         <div className="flex items-center gap-3">
           <button className="btn btn-primary" onClick={saveAnnouncement}>
             {t('admin_cms_save')}
@@ -170,10 +169,7 @@ function ContentTab({ config, refetch }: TabProps) {
         <ul className="divide-y divide-fog border border-fog">
           {nav.map((item, i) => (
             <li key={item.key} className="flex items-center justify-between gap-3 px-3 py-2">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={item.visible} onChange={() => toggleNavVisible(i)} />
-                <span className="label-mono text-bone">{t(item.key)}</span>
-              </label>
+              <Switch checked={item.visible} onChange={() => toggleNavVisible(i)} label={t(item.key)} />
               <div className="flex gap-1">
                 <button className="btn" disabled={i === 0} onClick={() => moveNav(i, -1)}>
                   UP
@@ -195,14 +191,13 @@ function ContentTab({ config, refetch }: TabProps) {
 
       <section className="border-t border-fog pt-6">
         <h3 className="label-mono mb-3">{t('admin_cms_registration_title')}</h3>
-        <label className="label-mono mb-3 flex items-center gap-2 text-bone">
-          <input
-            type="checkbox"
+        <div className="mb-3">
+          <Switch
             checked={registration.inviteOnly}
-            onChange={(e) => setRegistration({ ...registration, inviteOnly: e.target.checked })}
+            onChange={(checked) => setRegistration({ ...registration, inviteOnly: checked })}
+            label={t('admin_cms_registration_invite_only')}
           />
-          {t('admin_cms_registration_invite_only')}
-        </label>
+        </div>
         <div className="flex items-center gap-3">
           <button className="btn btn-primary" onClick={saveRegistration}>
             {t('admin_cms_save')}
@@ -282,14 +277,13 @@ function PagesTab() {
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
           />
-          <label className="label-mono mb-3 flex items-center gap-2 text-bone">
-            <input
-              type="checkbox"
+          <div className="mb-3">
+            <Switch
               checked={form.published}
-              onChange={(e) => setForm({ ...form, published: e.target.checked })}
+              onChange={(checked) => setForm({ ...form, published: checked })}
+              label={t('admin_cms_page_published')}
             />
-            {t('admin_cms_page_published')}
-          </label>
+          </div>
           <div className="flex items-center gap-3">
             <button className="btn btn-primary" onClick={save}>
               {t('admin_cms_save')}
@@ -401,10 +395,7 @@ function CategoriesFlagsTab({ config, refetch }: TabProps) {
         <ul className="divide-y divide-fog border border-fog">
           {categories.map((c, i) => (
             <li key={c.category} className="flex items-center justify-between gap-3 px-3 py-2">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={c.visible} onChange={() => toggleCategoryVisible(i)} />
-                <span className="label-mono text-bone">{c.category}</span>
-              </label>
+              <Switch checked={c.visible} onChange={() => toggleCategoryVisible(i)} label={c.category} />
               <div className="flex gap-1">
                 <button className="btn" disabled={i === 0} onClick={() => moveCategory(i, -1)}>
                   UP
@@ -508,10 +499,9 @@ function PricingTab({ config, refetch }: TabProps) {
         value={price}
         onChange={(e) => setPrice(Number(e.target.value))}
       />
-      <label className="label-mono mb-3 flex items-center gap-2 text-bone">
-        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-        {t('admin_cms_pricing_paywall')}
-      </label>
+      <div className="mb-3">
+        <Switch checked={enabled} onChange={setEnabled} label={t('admin_cms_pricing_paywall')} />
+      </div>
       <div className="flex items-center gap-3">
         <button className="btn btn-primary" onClick={save}>
           {t('admin_cms_save')}
