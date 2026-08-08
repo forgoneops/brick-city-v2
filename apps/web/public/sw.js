@@ -1,4 +1,4 @@
-// build marker: 2026-08-08T11:08:50.482Z (second update) — no-op
+// build marker: 2026-08-08T11:12:17.204Z (third update, correctly sequenced) — no-op
 // Phase 0 service worker stub — passthrough only, plus Web Push handling.
 self.addEventListener('install', () => {
   self.skipWaiting();
